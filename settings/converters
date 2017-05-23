@@ -44,24 +44,6 @@ def pace_miles_to_km(pace):
     return datetime.timedelta(seconds=int(km_seconds))
 
 
-def pace_km_to_miles(pace):
-    """Converts pace per mile to kilometer."""
-    mile_seconds = dec(miles_to_km(dec(pace.total_seconds())), 2)
-    return datetime.timedelta(seconds=int(mile_seconds))
-
-
-def miles_pace_to_metres_per_sec(pace):
-    """Convert a given pace in miles to metres per second speed."""
-    metres_per_hour = dec(3600 / metres_to_miles(dec(pace.total_seconds())))
-    return dec(metres_per_hour / 3600, 3)
-
-
-def km_pace_to_metres_per_sec(pace):
-    """Convert a given pace in miles to metres per second speed."""
-    metres_per_hour = dec((3600 / dec(pace.total_seconds())) * 1000)
-    return dec(metres_per_hour / 3600, 3)
-
-
 def convert_distance(distance, from_dis, to_dis):
     """Converts the given distance."""
     return dec(distance * determine_distance_type(from_dis, to_dis))
@@ -88,67 +70,25 @@ def determine_distance_type(dis_from, dis_to):
     return converter_dict['{}-{}'.format(dis_from, dis_to)]
 
 
-def miles_to_metres(miles):
-    """Converts given miles to metres."""
-    return dec(miles * metres_in_mile)
-
-
-def metres_to_miles(metres):
-    """Converts given miles to metres."""
-    return dec(metres * miles_in_metre)
-
-
-def miles_to_km(miles):
-    """Converts given miles to km."""
-    return dec(miles_to_metres(miles) / 1000)
-
-
-def km_to_miles(km):
-    """Converts given miles to metres."""
-    return dec(km * miles_in_km)
-
-
 if __name__ == '__main__':
     print('Mile Conversions')
     miles = dec('2')
-    print(miles_to_metres(miles))
     print(convert_distance(miles, 'mile', 'metre'))
-    print(miles_to_km(miles))
     print(convert_distance(miles, 'mile', 'km'))
 
     print('\nKM Conversions')
     km = dec('1')
-    print(km_to_miles(km))
     print(convert_distance(km, 'km', 'mile'))
 
     print('\nMile Paces')
     pace = datetime.timedelta(minutes=6, seconds=16)
-    print(pace_miles_to_km(pace))
     print(calculate_pace(pace, 1, 'mile', 'km'))
-    print(miles_pace_to_metres_per_sec(pace))
     print(calculate_metres_per_sec(pace, 'mile'))
 
     print('\nKM Paces')
     km_pace = datetime.timedelta(minutes=3, seconds=54)
-    print(pace_km_to_miles(km_pace))
     print(calculate_pace(km_pace, 1, 'km', 'mile'))
-    print(km_pace_to_metres_per_sec(km_pace))
     print(calculate_metres_per_sec(km_pace, 'km'))
-
-    test_pace = datetime.timedelta(seconds=1)
-    end_pace = datetime.timedelta(minutes=16)
-    counts = 0
-    while test_pace <= end_pace:
-        m_to_km = pace_miles_to_km(test_pace)
-        km_to_m = pace_km_to_miles(m_to_km)
-        if km_to_m != test_pace:
-            #print('No match:\n\tMile Pace {} - KM Pace {}'.format(test_pace, km_to_m))
-            counts += 1
-
-        test_pace += datetime.timedelta(seconds=1)
-
-    print('{} of {}'.format(counts, end_pace.total_seconds()))
-
 
     another_pace = datetime.timedelta(minutes=45, seconds=16)
     print(calculate_pace(another_pace, 10, 'km', 'mile'))
