@@ -1,0 +1,94 @@
+import datetime
+from decimal import Decimal
+
+
+def dec(number, place=None, rounding='ROUND_HALF_EVEN'):
+    """Returns the given Decimal in two places."""
+    if place is None:
+        return Decimal(str(number))
+    dec_point = Decimal('0.' + ('0' * place)) if place > 0 else Decimal('0')
+    return Decimal(number).quantize(dec_point, rounding=rounding)
+
+metres_in_mile = dec('1609.34')
+miles_in_metre = dec('0.000621371')
+miles_in_km = dec('0.621371')
+km_in_mile = dec('1.60934')
+
+converter_dict = {
+    'metre-mile': miles_in_metre,
+    'mile-metre': metres_in_mile,
+    'km-metre': dec('1000'),
+    'metre-km': dec('0.001'),
+    'km-mile': miles_in_km,
+    'mile-km': km_in_mile
+}
+
+
+def timestamp(date=datetime.datetime.utcnow()):
+    """Creates int representation of date based on seconds since UTC 31/12/1989 00:00."""
+    date_base = datetime.datetime(year=1989, month=12, day=31)
+    return int((date - date_base).total_seconds())
+
+
+def convert_to_time(string):
+    """Converts given string in format 00:00:00 to datetime."""
+    times = [0] * 3
+    for i, time in enumerate(reversed(string.split(':'))):
+        times[i] = float(time)
+    return datetime.timedelta(hours=times[2], minutes=times[1], seconds=times[0])
+
+
+def pace_miles_to_km(pace):
+    """Converts pace per mile to kilometer."""
+    km_seconds = dec(km_to_miles(dec(pace.total_seconds())), 0)
+    return datetime.timedelta(seconds=int(km_seconds))
+
+
+def convert_distance(distance, from_dis, to_dis):
+    """Converts the given distance."""
+    return dec(distance * determine_distance_type(from_dis, to_dis))
+
+
+def calculate_metres_per_sec(pace, dist_type):
+    """Convert a given pace to metres per second speed."""
+    seconds = convert_distance(dec(pace.total_seconds()), 'metre', dist_type)
+    print(seconds)
+    metres_per_hour = dec(3600 / seconds)
+    print(metres_per_hour)
+    return dec(metres_per_hour / 3600, 3)
+
+
+def calculate_pace(time, distance, dis_type, pace):
+    """Converts the given time and distance to a miles pace."""
+    percentage = dec(1 / (distance * determine_distance_type(dis_type, pace)))
+    seconds = dec(dec(time.total_seconds()) * percentage, 2)
+    return datetime.timedelta(seconds=float(seconds))
+
+
+def determine_distance_type(dis_from, dis_to):
+    """Returns the conversion number between the two distance types."""
+    return converter_dict['{}-{}'.format(dis_from, dis_to)]
+
+
+if __name__ == '__main__':
+    print('Mile Conversions')
+    miles = dec('2')
+    print(convert_distance(miles, 'mile', 'metre'))
+    print(convert_distance(miles, 'mile', 'km'))
+
+    print('\nKM Conversions')
+    km = dec('1')
+    print(convert_distance(km, 'km', 'mile'))
+
+    print('\nMile Paces')
+    pace = datetime.timedelta(minutes=6, seconds=16)
+    print(calculate_pace(pace, 1, 'mile', 'km'))
+    print(calculate_metres_per_sec(pace, 'mile'))
+
+    print('\nKM Paces')
+    km_pace = datetime.timedelta(minutes=3, seconds=54)
+    print(calculate_pace(km_pace, 1, 'km', 'mile'))
+    print(calculate_metres_per_sec(km_pace, 'km'))
+
+    another_pace = datetime.timedelta(minutes=45, seconds=16)
+    print(calculate_pace(another_pace, 10, 'km', 'mile'))
