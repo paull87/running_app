@@ -126,3 +126,11 @@ if __name__ == '__main__':
     miles += dec('2.25', 1)
 
     print(metres + miles)
+
+    print('\nKM Conversions')
+    km = dec('15')
+    print(convert_distance(km, 'km', 'mile'))
+
+    print('Mile Conversions')
+    miles = dec('10')
+    print(convert_distance(miles, 'mile', 'km'))
