@@ -9,7 +9,8 @@ distances = {
     '2mile': [convert_distance(dec('2', 0), 'mile', 'km'), dec('2', 0)],
     '5,000': [dec('5', 0), convert_distance(dec('5', 0), 'km', 'mile')],
     '10K': [dec('10', 0), convert_distance(dec('10', 0), 'km', 'mile')],
-    '15K': [dec('15', 0), convert_distance(dec('10', 0), 'km', 'mile')],
+    '15K': [dec('15', 0), convert_distance(dec('15', 0), 'km', 'mile')],
+    '10Mile': [convert_distance(dec('10', 2), 'mile', 'km'), dec('10', 0)],
     'HalfMarathon': [convert_distance(dec('13.11', 2), 'mile', 'km'), dec('13.11', 2)],
     'Marathon': [convert_distance(dec('26.22', 2), 'mile', 'km'), dec('26.22', 2)]
 }
@@ -46,6 +47,7 @@ def get_race_paces(races):
     paces={}
     recovery_km = convert_to_time('01:15')
     recovery_mile = convert_to_time('02:00')
+    plus2 = convert_to_time('00:02')
     for vdot, race_times in races.items():
         paces[vdot] = {}
         for race, times in race_times.items():
@@ -60,6 +62,14 @@ def get_race_paces(races):
                 paces[vdot]['Recovery-Mile'] = time_hhmm(calculate_pace(convert_to_time(times)
                                                                        , distances[race][1], 'mile') +
                                                         recovery_mile)
+            if race == '15K':
+                paces[vdot]['10Mile-Mile'] = time_hhmm(
+                    calculate_pace(convert_to_time(times), distances[race][1], 'mile') + plus2)
+
+                paces[vdot]['10Mile-KM'] = time_hhmm(calculate_pace(calculate_pace(
+                    convert_to_time(times), distances[race][1], 'mile') + plus2,
+                                     1, 'mile', 'km'))
+
     return paces
 
 
@@ -115,7 +125,7 @@ if __name__ == '__main__':
         # ' Repetition200 Repetition300 Repetition400 Repetition600 Repetition800' +
         ' Interval-KM Interval-Mile Repetition-KM Repetition-Mile' +
         ' 1,500-KM 1,500-Mile Mile-KM Mile-Mile 3,000-KM 3,000-Mile 2Mile-KM 2Mile-Mile 5,000-KM 5,000-Mile' +
-        ' 10K-KM 10K-Mile 15K-KM 15K-Mile HalfMarathon-KM HalfMarathon-Mile Marathon-KM Marathon-Mile\n'
+        ' 10K-KM 10K-Mile 15K-KM 15K-Mile 10Mile-KM 10Mile-Mile HalfMarathon-KM HalfMarathon-Mile Marathon-KM Marathon-Mile\n'
     ]
 
     line_fmt = ' '.join(['{}'] * len(vdot_lines[0].split())) + '\n'
@@ -161,6 +171,8 @@ if __name__ == '__main__':
             race_paces[k]['10K-Mile'],
             race_paces[k]['15K-KM'],
             race_paces[k]['15K-Mile'],
+            race_paces[k]['10Mile-KM'],
+            race_paces[k]['10Mile-Mile'],
             race_paces[k]['HalfMarathon-KM'],
             race_paces[k]['HalfMarathon-Mile'],
             race_paces[k]['Marathon-KM'],
