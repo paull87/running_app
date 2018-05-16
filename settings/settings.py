@@ -14,9 +14,6 @@ class Settings:
     """Class containing the settings of the app."""
     def __init__(self):
         """Initialise the settings."""
-        self.TEMPLATE_PATH = '..\\template\\template.txt'
-        self.CALENDAR = '..\\Calendar\\calendar.json'
-        self.SCHEDULE_PATH = '..\\template\\schedule.txt'
         self.WORKOUTS_PATH = '..\\Workouts\\'
         self.FIT_PATH = '..\\Workouts\\FIT\\'
         self.VDOT_RACES = '..\\VDOT\\VDOT Races.txt'
@@ -36,14 +33,23 @@ class Settings:
         self.durations = {
             'duration_type': '5',
         }
-        #self.default_targets = {
-        #    'easy': 'hr',
-        #    'long': 'hr',
-        #    'recovery': 'hr',
-        #    'interval': 'pace',
-        #    'threshold': 'pace',
-        #    'repetition': 'pace'
-        #}
+
+        self.schedule_template = """Type,Local Number,Message,Field 1,Value 1,Units 1,Field 2,Value 2,Units 2,Field 3,Value 3,Units 3,Field 4,Value 4,Units 4,Field 5,Value 5,Units 5,Field 6,Value 6,Units 6,Field 7,Value 7,Units 7,
+Definition,0,file_id,type,1,,manufacturer,1,,product,1,,time_created,1,,serial_number,1,,number,1,,,,,
+Data,0,file_id,type,"7",,manufacturer,"1",,garmin_product,"65534",,time_created,"{}",,serial_number,"1",,number,"1",,,,,
+Definition,0,file_creator,software_version,1,,hardware_version,1,,,,,,,,,,,,,,,,,
+Data,0,file_creator,software_version,"17",,hardware_version,"0",,,,,,,,,,,,,,,,,
+Definition,0,schedule,manufacturer,1,,product,1,,serial_number,1,,time_created,1,,type,1,,scheduled_time,1,,completed,1,,
+"""
+
+        self.workout_template = """Type,Local Number,Message,Field 1,Value 1,Units 1,Field 2,Value 2,Units 2,Field 3,Value 3,Units 3,Field 4,Value 4,Units 4,Field 5,Value 5,Units 5,Field 6,Value 6,Units 6,Field 7,Value 7,Units 7,Field 8,Value 8,Units 8,Field 9,Value 9,Units 9,
+Definition,0,file_id,serial_number,1,,time_created,1,,manufacturer,1,,product,1,,number,1,,type,1,,,,,,,,,,,
+Data,0,file_id,serial_number,"{0}",,time_created,"{1}",,manufacturer,"1",,garmin_product,"65534",,type,"5",,,,,,,,,,,,,,
+Definition,0,file_creator,software_version,1,,hardware_version,1,,,,,,,,,,,,,,,,,,,,,,,
+Data,0,file_creator,software_version,"1509",,hardware_version,"0",,,,,,,,,,,,,,,,,,,,,,,
+Definition,0,workout,capabilities,1,,wkt_name,16,,num_valid_steps,1,,,,,,,,,,,,,,,,,,,,
+Data,0,workout,capabilities,"32",,wkt_name,"{2}",,num_valid_steps,"{3}",,sport,"1",,,,,,,,,,,,,,,,,
+"""
 
     def get_settings(self):
         """Gets the current settings from the database."""
