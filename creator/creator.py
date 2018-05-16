@@ -1,7 +1,5 @@
-from template.template import get_workout_template
 from creator.workout import Workout
 from settings.settings import Settings
-from VDOT.VDOT import VDOT
 import os
 import ast
 import subprocess
@@ -13,7 +11,7 @@ def refresh_workouts(settings):
     for name, workout, filename, serial, _ in settings.get_workouts().itertuples():
         print(name, filename, serial)
         workout = Workout(name, settings.zones, ast.literal_eval(workout), settings.units, settings.max_hr, filename, serial)
-        create_workout_file(workout)
+        create_workout_file(workout, settings.workout_template)
         delete_fit_workout(filename)
         if filename != workout.timestamp or serial != workout.serial:
             settings.update_workout((workout.timestamp, workout.serial, name))
@@ -51,9 +49,9 @@ def run_fitcsvtool(csv_path, fit_path):
     subprocess.call(args, stdout=FNULL, stderr=subprocess.STDOUT)
 
 
-def create_workout_file(workout):
+def create_workout_file(workout, template):
     with open('{}{}.csv'.format(settings.WORKOUTS_PATH, workout.timestamp), 'w') as workout_file:
-        workout_file.write(get_workout_template().format(workout.serial, workout.timestamp, workout.name,
+        workout_file.write(template.format(workout.serial, workout.timestamp, workout.name,
                                                          len(workout.steps)))
         for step in workout.steps:
             workout_file.write(str(step))

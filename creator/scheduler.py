@@ -1,4 +1,3 @@
-from template.template import get_schedule_template
 from settings.settings import Settings
 from settings.converters import timestamp, convert_to_date, dec
 import os
@@ -97,7 +96,7 @@ def create_single_schedule_file(schedule, race_date):
     schedule_diary = []
     total_weeks = max([dec(int(d) / 7, 0, 'ROUND_CEILING') for d in schedule.keys()])
     with open(os.path.join(settings.SCHEDULE_PLANS, 'SCHEDULE.csv'), 'w') as schedule_file:
-        schedule_file.write(get_schedule_template().format(timestamp()))
+        schedule_file.write(settings.schedule_template.format(timestamp()))
         for day, name in sorted([(int(k), v) for k, v in schedule.items()], reverse=True):
             filename, serial = find_workout(name)
             workout_day = race_date - datetime.timedelta(days=day)
@@ -141,7 +140,7 @@ def create_multi_schedule_file(schedule, race_date):
                 run_fitcsvtool(schedule_directory)
             schedule_directory = create_directory(workout_day.strftime('%Y%m%d'))
             schedule_file = create_file(schedule_directory)
-            schedule_file.write(get_schedule_template().format(timestamp()))
+            schedule_file.write(settings.schedule_template.format(timestamp()))
             print(schedule_directory)
         if filename:
             schedule_file.write(schedule_step(serial, filename, timestamp(workout_day)))
