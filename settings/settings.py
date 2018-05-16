@@ -1,40 +1,31 @@
+from typing import re
+
 from settings.converters import dec
+from settings.db_deployment import deploy_database
+from settings.database import DB
+from dateutil.relativedelta import relativedelta
 import json
 import os
+import sqlite3
+import datetime
 
 
 class Settings:
     """Class containing the settings of the app."""
     def __init__(self):
         """Initialise the settings."""
-        self.TEMPLATE_PATH = '..\\template\\template.txt'
-        self.CALENDAR = '..\\Calendar\\calendar.json'
-        self.SCHEDULE_PATH = '..\\template\\schedule.txt'
         self.WORKOUTS_PATH = '..\\Workouts\\'
         self.FIT_PATH = '..\\Workouts\\FIT\\'
         self.VDOT_RACES = '..\\VDOT\\VDOT Races.txt'
         self.VDOT_TRAINING = '..\\VDOT\\VDOT Training.txt'
         self.CONFIG = temp_path('config.tmp')
-        self.WORKOUT_TEMPLATES = '..\\template\\workout templates.json' #  temp_path('workout templates.json')
+        #self.WORKOUT_TEMPLATES = '..\\template\\workout templates.json' #  temp_path('workout templates.json')
         self.WORKOUT_PLANS = '..\\template\\plans\\'
         self.SCHEDULE_PLANS = '..\\Workouts\\schedule\\'
         self.DATABASE_PATH = appdata_path('FitnessDB.db')
-        self.units = 'mile'
-        self.max_hr = 189
-        self.zones = {
-            'easy': [dec(dec('0.7', 2) * dec(self.max_hr, 0), 0, 'ROUND_FLOOR'),
-                     dec(dec('0.81', 2) * dec(self.max_hr, 0), 0, 'ROUND_CEILING')],
-            'long': [dec(dec('0.74', 2) * dec(self.max_hr, 0), 0, 'ROUND_FLOOR'),
-                     dec(dec('0.84', 2) * dec(self.max_hr, 0), 0, 'ROUND_CEILING')],
-            'recovery': [dec(dec('0.5', 2) * dec(self.max_hr, 0), 0, 'ROUND_FLOOR'),
-                         dec(dec('0.76', 2) * dec(self.max_hr, 0), 0, 'ROUND_CEILING')],
-            'interval': [dec(dec('0.94', 2) * dec(self.max_hr, 0), 0, 'ROUND_FLOOR'),
-                         dec(dec('0.98', 2) * dec(self.max_hr, 0), 0, 'ROUND_CEILING')],
-            'threshold': [dec(dec('0.8', 2) * dec(self.max_hr, 0), 0, 'ROUND_FLOOR'),
-                          dec(dec('0.91', 2) * dec(self.max_hr, 0), 0, 'ROUND_CEILING')],
-            'repetition': [dec(dec('0.9', 2) * dec(self.max_hr, 0), 0, 'ROUND_FLOOR'),
-                           dec(dec('1', 2) * dec(self.max_hr, 0), 0, 'ROUND_CEILING')],
-        }
+        self.database = DB(self._connect_db())
+        self.get_settings()
+        self.zones = self.get_zones()
         self.targets = {
             'target_type': '2',
         }
@@ -42,66 +33,39 @@ class Settings:
         self.durations = {
             'duration_type': '5',
         }
-        self.default_targets = {
-            'easy': 'hr',
-            'long': 'hr',
-            'recovery': 'hr',
-            'interval': 'pace',
-            'threshold': 'pace',
-            'repetition': 'pace'
-        }
 
-    def get_pace_targets(self, target_high, target_low):
-        """Creates targets based on given paces"""
-        pace_targets = self.targets.copy()
-        pace_targets['target_type'] = '0'
-        pace_targets['target_speed_zone'] = '0'
-        pace_targets['custom_target_speed_low'] = str(target_low) + ',m/s'
-        pace_targets['custom_target_speed_high'] = str(target_high) + ',m/s'
-        return pace_targets
+        self.schedule_template = """Type,Local Number,Message,Field 1,Value 1,Units 1,Field 2,Value 2,Units 2,Field 3,Value 3,Units 3,Field 4,Value 4,Units 4,Field 5,Value 5,Units 5,Field 6,Value 6,Units 6,Field 7,Value 7,Units 7,
+Definition,0,file_id,type,1,,manufacturer,1,,product,1,,time_created,1,,serial_number,1,,number,1,,,,,
+Data,0,file_id,type,"7",,manufacturer,"1",,garmin_product,"65534",,time_created,"{}",,serial_number,"1",,number,"1",,,,,
+Definition,0,file_creator,software_version,1,,hardware_version,1,,,,,,,,,,,,,,,,,
+Data,0,file_creator,software_version,"17",,hardware_version,"0",,,,,,,,,,,,,,,,,
+Definition,0,schedule,manufacturer,1,,product,1,,serial_number,1,,time_created,1,,type,1,,scheduled_time,1,,completed,1,,
+"""
 
-    def get_hr_targets(self, target_high, target_low):
-        """Creates targets based on given heart rate"""
-        hr_targets = self.targets.copy()
-        hr_targets['target_type'] = '1'
-        hr_targets['target_hr_zone'] = '0'
-        hr_targets['custom_target_heart_rate_low'] = str(target_low) + ',% or bpm'
-        hr_targets['custom_target_heart_rate_high'] = str(target_high) + ',% or bpm'
-        return hr_targets
+        self.workout_template = """Type,Local Number,Message,Field 1,Value 1,Units 1,Field 2,Value 2,Units 2,Field 3,Value 3,Units 3,Field 4,Value 4,Units 4,Field 5,Value 5,Units 5,Field 6,Value 6,Units 6,Field 7,Value 7,Units 7,Field 8,Value 8,Units 8,Field 9,Value 9,Units 9,
+Definition,0,file_id,serial_number,1,,time_created,1,,manufacturer,1,,product,1,,number,1,,type,1,,,,,,,,,,,
+Data,0,file_id,serial_number,"{0}",,time_created,"{1}",,manufacturer,"1",,garmin_product,"65534",,type,"5",,,,,,,,,,,,,,
+Definition,0,file_creator,software_version,1,,hardware_version,1,,,,,,,,,,,,,,,,,,,,,,,
+Data,0,file_creator,software_version,"1509",,hardware_version,"0",,,,,,,,,,,,,,,,,,,,,,,
+Definition,0,workout,capabilities,1,,wkt_name,16,,num_valid_steps,1,,,,,,,,,,,,,,,,,,,,
+Data,0,workout,capabilities,"32",,wkt_name,"{2}",,num_valid_steps,"{3}",,sport,"1",,,,,,,,,,,,,,,,,
+"""
 
-    def get_open_targets(self):
-        """Creates open targets."""
-        open_targets = self.targets.copy()
-        open_targets['target_value'] = '0'
-        return open_targets
+    def get_settings(self):
+        """Gets the current settings from the database."""
+        vdot, hr, units = (self.database.get_current_settings())
+        self.vdot = dec(vdot, 2)
+        self.max_hr = hr
+        self.units = units
 
-    def get_time_durations(self, duration):
-        """Creates durations based on time."""
-        time_durations = self.durations.copy()
-        time_durations['duration_type'] = '0'
-        time_durations['duration_time'] = str(duration) + ',s'
-        return time_durations
+    def get_zones(self):
+        """Gets the current pace and heart rate zones for workouts."""
+        zones = self.database.get_targets(self.units)
+        return zones
 
-    def get_distance_durations(self, duration):
-        """Creates durations based on distance."""
-        distance_durations = self.durations.copy()
-        distance_durations['duration_type'] = '1'
-        distance_durations['duration_distance'] = str(duration) + ',m'
-        return distance_durations
-
-    def get_repeat_durations(self, step_id, repeats):
-        """Creates durations based on repeats."""
-        repeat_durations = self.durations.copy()
-        repeat_durations['duration_type'] = '6'
-        repeat_durations['duration_step'] = str(step_id)
-        repeat_durations['repeat_steps'] = str(repeats)
-        return repeat_durations
-
-    def get_open_durations(self):
-        """Creates durations based on repeats."""
-        open_durations = self.durations.copy()
-        open_durations['duration_value'] = '0'
-        return open_durations
+    def update_settings(self, field, value):
+        """Updates the settings."""
+        self.database.update_settings(field, value)
 
     def get_config(self):
         """Returns the cofig file contents."""
@@ -142,41 +106,25 @@ class Settings:
         except Exception as e:
             print('Unable to amend config file: ', e)
 
-    def get_templates(self):
-        """Returns the templates file contents."""
-        self._check_templates_exists()
-        try:
-            with open(self.WORKOUT_TEMPLATES, 'r') as templates_file:
-                templates_json = json.loads(templates_file.read())
-            return templates_json
-        except Exception as e:
-            print('Unable to open templates file: ', e)
+    def get_workouts(self):
+        """Returns the workout contents."""
+        return self.database.get_workouts()
 
-    def _check_templates_exists(self):
-        """Create the config if it doesn't exist."""
-        if not os.path.isfile(self.WORKOUT_TEMPLATES):
-            self._create_templates()
+    def get_single_workout(self, name):
+        """Returns the given workout."""
+        return self.database.get_single_workout(name)
 
-    def _create_templates(self):
-        """Creates a default empty config file."""
-        FILE_ATTRIBUTE_HIDDEN = 0x02
-        empty_file = {}
-        try:
-            with open(self.WORKOUT_TEMPLATES, 'w') as file:
-                json.dump(empty_file, file)
-        except Exception as e:
-            print('Unable to create Templates file: ', e)
+    def update_workout(self, workout):
+        """Updates the workout details."""
+        self.database.update_workout(workout)
 
-    def update_template_filename(self, name, filename, serial):
-        """Updates the filename of the template"""
-        templates = self.get_templates()
-        templates[name]['filename'] = filename
-        templates[name]['serial'] = serial
-        try:
-            with open(self.WORKOUT_TEMPLATES, 'w') as file:
-                json.dump(templates, file)
-        except Exception as e:
-            print('Unable to amend template: ', e)
+    def schedule_workouts(self, workouts, start_date, end_date, schedule_id):
+        """Adds schedule workouts to the planned schedules."""
+        self.database.schedule_workouts(workouts, start_date, end_date, schedule_id)
+
+    def schedule_race(self, distance_id, race_date, race_name=None):
+        """Adds the given race detail to race schedule."""
+        return self.database.schedule_race(distance_id, race_date, race_name)
 
     def list_plans(self):
         """Returns list of default plans available."""
@@ -184,38 +132,13 @@ class Settings:
 
     def get_plan_schedule(self, name):
         """Returns the plan of the given name."""
-        plan = os.path.join(self.WORKOUT_PLANS, name + '.json')
-        try:
-            with open(plan, 'r') as plan_file:
-                plan_json = json.loads(plan_file.read())
-            return plan_json
-        except Exception as e:
-            print('Unable to open plan file: ', e)
+        return self.database.get_schedule_workouts(name)
 
-    def get_calendar(self):
+    def get_calendar(self, month, year):
         """Returns the calendar file contents."""
-        self._check_calendar_exists()
-        try:
-            with open(self.CALENDAR, 'r') as calendar_file:
-                calendar_json = json.loads(calendar_file.read())
-            return calendar_json
-        except Exception as e:
-            print('Unable to open calendar file: ', e)
-
-    def _check_calendar_exists(self):
-        """Create the calendar if it doesn't exist."""
-        if not os.path.isfile(self.CALENDAR):
-            self._create_calendar()
-
-    def _create_calendar(self):
-        """Creates a default empty calendar file."""
-        FILE_ATTRIBUTE_HIDDEN = 0x02
-        empty_file = {}
-        try:
-            with open(self.CALENDAR, 'w') as file:
-                json.dump(empty_file, file)
-        except Exception as e:
-            print('Unable to create calendar file: ', e)
+        date_from = datetime.datetime(day=1, month=month, year=year)
+        date_to = date_from + relativedelta(months=1)
+        return self.database.get_calendar_range(date_from, date_to)
 
     def amend_calendar(self, day, value):
         """Amends the day of existing calendar."""
@@ -226,6 +149,15 @@ class Settings:
                 json.dump(calendar, file)
         except Exception as e:
             print('Unable to amend calendar file: ', e)
+
+    def _connect_db(self):
+        """Checks if database exists and creates it if not."""
+        if not os.path.isfile(self.DATABASE_PATH):
+            deploy_database(self.DATABASE_PATH)
+        try:
+            return sqlite3.connect(self.DATABASE_PATH, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+        except Exception as e:
+            print('Unable to connect to database: ', e)
 
 
 def temp_path(filename):
