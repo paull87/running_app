@@ -1,11 +1,9 @@
 from settings.converters import timestamp, calculate_metres_per_sec, convert_distance, dec, convert_to_time
-from settings.settings import Settings
-from step import WorkOutStep
+from creator.step import WorkOutStep
 import datetime
 import random
 
-settings = Settings()
-pace_add = datetime.timedelta(seconds=10)
+pace_add = 10
 
 
 class Workout:
@@ -14,34 +12,96 @@ class Workout:
     next_timestamp = timestamp()
     next_serial = random.randrange(10000000, 99990000)
 
-
-    def __init__(self, name, paces, run): # warmup=None, cooldown=None, intervals=None, run=None, splits=1):
+    def __init__(self, name, paces, run, unit, max_hr, timestamp, serial):
         """Initialise the workout."""
         self.name = name
-        self.timestamp = Workout._get_next_timestamp()
-        self.serial = Workout._get_serial_number()
-        #self.workout_type = workout_type
+        self.timestamp = Workout._get_next_timestamp(timestamp)
+        self.serial = Workout._get_serial_number(serial)
         self.run = run
         self.paces = paces
+        self.units = unit
+        self.max_hr = max_hr
         self.steps = []
+        self.targets = {
+            'target_type': '2'
+        }
+
+        self.durations = {
+            'duration_type': '5'
+        }
         self._decide_workout()
 
         WorkOutStep.reset_id()
 
     @classmethod
-    def _get_next_timestamp(cls):
+    def _get_next_timestamp(cls, timestamp):
         """Generate the next serial for the container."""
+        if len(timestamp) > 1:
+            return timestamp
         result = cls.next_timestamp
         cls.next_timestamp += 1
         return result
 
     @classmethod
-    def _get_serial_number(cls):
+    def _get_serial_number(cls, serial):
         """Generates the serial number based on the timestamp"""
+        if len(serial) > 1:
+            return serial
         result = cls.next_serial
         cls.next_serial += 1
         return result
 
+    def get_pace_targets(self, target_high, target_low):
+        """Creates targets based on given paces"""
+        pace_targets = self.targets.copy()
+        pace_targets['target_type'] = '0'
+        pace_targets['target_speed_zone'] = '0'
+        pace_targets['custom_target_speed_low'] = str(target_low) + ',m/s'
+        pace_targets['custom_target_speed_high'] = str(target_high) + ',m/s'
+        return pace_targets
+
+    def get_hr_targets(self, target_high, target_low):
+        """Creates targets based on given heart rate"""
+        hr_targets = self.targets.copy()
+        hr_targets['target_type'] = '1'
+        hr_targets['target_hr_zone'] = '0'
+        hr_targets['custom_target_heart_rate_low'] = str(target_low) + ',% or bpm'
+        hr_targets['custom_target_heart_rate_high'] = str(target_high) + ',% or bpm'
+        return hr_targets
+
+    def get_open_targets(self):
+        """Creates open targets."""
+        open_targets = self.targets.copy()
+        open_targets['target_value'] = '0'
+        return open_targets
+
+    def get_time_durations(self, duration):
+        """Creates durations based on time."""
+        time_durations = self.durations.copy()
+        time_durations['duration_type'] = '0'
+        time_durations['duration_time'] = str(duration) + ',s'
+        return time_durations
+
+    def get_distance_durations(self, duration):
+        """Creates durations based on distance."""
+        distance_durations = self.durations.copy()
+        distance_durations['duration_type'] = '1'
+        distance_durations['duration_distance'] = str(duration) + ',m'
+        return distance_durations
+
+    def get_repeat_durations(self, step_id, repeats):
+        """Creates durations based on repeats."""
+        repeat_durations = self.durations.copy()
+        repeat_durations['duration_type'] = '6'
+        repeat_durations['duration_step'] = str(step_id)
+        repeat_durations['repeat_steps'] = str(repeats)
+        return repeat_durations
+
+    def get_open_durations(self):
+        """Creates durations based on repeats."""
+        open_durations = self.durations.copy()
+        open_durations['duration_value'] = '0'
+        return open_durations
 
     def _decide_workout(self):
         """Decides which workout needs to be created depending on type."""
@@ -67,7 +127,7 @@ class Workout:
 
         # Process repeat step if given
         if repeat:
-            self.steps.append(create_repeat_step(repeat_id, repeat))
+            self.steps.append(self.create_repeat_step(repeat_id, repeat))
 
         return repeat_id
 
@@ -77,9 +137,9 @@ class Workout:
         workout_type, run_target, run_duration, splits, intensity = run
 
         if run_target == '':
-            run_target = determine_target(workout_type)
+            run_target = self.determine_target(workout_type)
 
-        run_duration_type, run_duration_value, run_duration_unit = format_duration(run_duration)
+        run_duration_type, run_duration_value, run_duration_unit = self.format_duration(run_duration)
 
         # Create mile/km splits if greater than 1
         if run_duration_type == 'distance' and splits == 1 and run_duration_unit != 'metre':
@@ -88,7 +148,7 @@ class Workout:
             step = self.create_step(workout_type, run_target, run_duration_type, 1, run_duration_unit)
             steps.append(step)
             if run_duration_rounded > 1:  # Only create a repeat if there are more than one.
-                repeat_step = create_repeat_step(step.id, run_duration_rounded)
+                repeat_step = self.create_repeat_step(step.id, run_duration_rounded)
                 steps.append(repeat_step)
             if run_duration_remainder > 0:
                 remainder_step = self.create_step(workout_type, run_target, run_duration_type,
@@ -104,26 +164,28 @@ class Workout:
         """Creates the step for a workout."""
         # Create targets
         if run_target == 'pace':
-            run_pace = self.paces[workout_type]
-            target_value_low = calculate_metres_per_sec(run_pace, settings.units)
-            target_value_high = calculate_metres_per_sec(run_pace - pace_add, settings.units)
-            targets = settings.get_pace_targets(target_value_high, target_value_low)
+            run_pace = int(self.paces.at[workout_type, 'Pace'])
+            target_value_low = calculate_metres_per_sec(datetime.timedelta(seconds=run_pace), self.units)
+            target_value_high = calculate_metres_per_sec(datetime.timedelta(seconds=run_pace - pace_add), self.units)
+            targets = self.get_pace_targets(target_value_high, target_value_low)
         elif run_target == 'hr':
-            target_value_low = settings.zones[workout_type][0] + 100
-            target_value_high = settings.zones[workout_type][1] + 100
-            targets = settings.get_hr_targets(target_value_high, target_value_low)
+            target_value_low = dec((dec(self.paces.at[workout_type, 'HRZoneLow'], 2) * dec(self.max_hr, 0)) + 100, 0
+                                   , 'ROUND_FLOOR')
+            target_value_high = dec((dec(self.paces.at[workout_type, 'HRZoneHigh'], 2) * dec(self.max_hr, 0)) + 100, 0
+                                    , 'ROUND_CEILING')
+            targets = self.get_hr_targets(target_value_high, target_value_low)
         else:  # run_target == 'none':
-            targets = settings.get_open_targets()
+            targets = self.get_open_targets()
 
         # Create duration
         if run_duration_type == 'distance':
             if run_duration_unit != 'metre':
                 run_duration = convert_distance(run_duration, run_duration_unit, 'metre')
-            durations = settings.get_distance_durations(run_duration)
+            durations = self.get_distance_durations(run_duration)
         elif run_duration_type == 'time':
-            durations = settings.get_time_durations(run_duration)
+            durations = self.get_time_durations(run_duration)
         else:  # run_duration_type == 'none':
-            durations = settings.get_open_durations()
+            durations = self.get_open_durations()
 
         return WorkOutStep('Run', durations, targets, 0)
 
@@ -135,40 +197,37 @@ class Workout:
             first_step_id = self.create_standard_step(step)
         return first_step_id
 
+    def create_repeat_step(self, step_id, repeats):
+        """Creates a repeat of the given step and number."""
+        step_name = 'Repeat Step {} x{}'.format(step_id + 1, repeats)
+        durations = self.get_repeat_durations(step_id, repeats)
+        targets = {}
+        return WorkOutStep(step_name, durations, targets)
 
-def create_repeat_step(step_id, repeats):
-    """Creates a repeat of the given step and number."""
-    step_name = 'Repeat Step {} x{}'.format(step_id + 1, repeats)
-    durations = settings.get_repeat_durations(step_id, repeats)
-    targets = {}
-    return WorkOutStep(step_name, durations, targets)
+    def format_duration(self, duration):
+        """Formats the duration of workout."""
+        if type(duration) == list:  # List is for distance based
+            duration_type = 'distance'
+            duration_value = dec(duration[0], 2)
+            duration_unit = duration[1]
+            if duration_unit != 'metre' and duration_unit != self.units:
+                duration_value = convert_distance(duration_value, duration_unit, self.units)
+        elif duration:
+            duration_type = 'time'
+            duration_value = convert_to_time(duration).total_seconds()
+            duration_unit = None
+        else:
+            duration_type = 'none'
+            duration_value = None
+            duration_unit = None
+        return duration_type, duration_value, duration_unit
 
-
-def format_duration(duration):
-    """Formats the duration of workout."""
-    if type(duration) == list:  # List is for distance based
-        duration_type = 'distance'
-        duration_value = dec(duration[0], 2)
-        duration_unit = duration[1]
-        if duration_unit != 'metre' and duration_unit != settings.units:
-            duration_value = convert_distance(duration_value, duration_unit, settings.units)
-    elif duration:
-        duration_type = 'time'
-        duration_value = convert_to_time(duration).total_seconds()
-        duration_unit = None
-    else:
-        duration_type = 'none'
-        duration_value = None
-        duration_unit = None
-    return duration_type, duration_value, duration_unit
-
-
-def determine_target(workout_type):
-    """Determines the target based on settings for that type of run."""
-    try:
-        return settings.default_targets[workout_type]
-    except KeyError as e:  # return pace as key error assumes it is race distance.
-        return 'pace'
+    def determine_target(self, workout_type):
+        """Determines the target for that type of run."""
+        try:
+            return self.paces.at[workout_type, 'DefaultTarget']
+        except KeyError as e:  # return pace as key error assumes it is race distance.
+            return 'pace'
 
 
 

@@ -8,8 +8,47 @@ import shutil
 import uuid
 
 settings = Settings()
-workouts = settings.get_templates()
-calendar = settings.get_calendar()
+workouts = settings.get_workouts()
+
+
+def schedule_plan(settings, plan, race_date=None, start_date=None):
+    """Adds the given plan for the scheduled dates."""
+    workouts = settings.get_plan_schedule(plan)
+    if not race_date:
+        race_date = set_race_dates(start_date, workouts)
+
+    workouts['WorkoutDate'] = workouts['DaysFromEnd'].apply(lambda x: race_date - datetime.timedelta(days=x))
+    workouts['WorkoutDateString'] = workouts['WorkoutDate'].apply(lambda x: str(x))
+    workouts['RaceDetailID'] = None
+    race_indexes = workouts[(workouts['RaceDistance'].notnull()) &
+                            (workouts['WorkoutDate'] >= start_date)].index.tolist()
+    for index in race_indexes:
+        workouts.at[index, 'RaceDetailID'] = add_schedule_races(workouts.at[index, 'DistanceID'],
+                                                                  workouts.at[index, 'WorkoutDateString'])
+    add_schedule_workouts(workouts[workouts['WorkoutDate'] >= start_date], start_date, race_date)
+
+
+def set_race_dates(start_date, workouts):
+    """Sets the race date when none is provided based on the start date."""
+    all_days = workouts[workouts['WorkoutWeekDay'] >= start_date.isoweekday()]
+    plan_days_to_race = int(all_days['DaysFromEnd'].max())
+    extra_days = 7 - (plan_days_to_race % 7)
+    return start_date + datetime.timedelta(days=plan_days_to_race + (extra_days - start_date.isoweekday()))
+
+
+def add_schedule_workouts(workouts, start_date, end_date):
+    """Adds the plan workouts to the schedule."""
+    schedule_id = workouts['ScheduleID'].max()
+    settings.schedule_workouts(workouts.loc[:, ['ScheduleWorkoutID', 'WorkoutDateString', 'RaceDetailID']], start_date,
+                               end_date, schedule_id)
+
+
+def add_schedule_races(distance, race_date):
+    race_id = settings.schedule_race(distance, race_date)
+    return race_id if race_id > 0 else None
+
+
+# TODO: move create_schedule to its own script and treat as "export scheduled workouts".
 
 
 def find_workout(workout_name):
@@ -183,4 +222,29 @@ def clear_schedule(path=settings.SCHEDULE_PLANS):
 
 if __name__ == '__main__':
 
-    create_schedule('Half Marathon 47 Miles', '04/03/2018')
+    settings = Settings()
+
+    schedule_plan(settings, 'Half Marathon 47 Miles', start_date=datetime.datetime(day=5, month=3, year=2018))
+
+    #create_schedule('Half Marathon 47 Miles', '04/03/2018')
+    #plans = ['Half Marathon 47 Miles', 'Half Marathon 63 Miles', 'Marathon 55 Miles', '5K 40 Miles', '10K 42 Miles']
+#
+    #for plan_name in plans:
+    #    plan = settings.get_plan_schedule(plan_name)
+    #    weeks = 0
+    #    for day, name in sorted([(int(k), v) for k, v in plan.items()], reverse=True):
+    #        if weeks == 0:
+    #            weeks = int(day / 7) + 1
+    #        current = (
+    #            plan_name,
+    #            name[3:] if name.startswith('PP') else name,
+    #            day,
+    #            weeks - int(day / 7),
+    #            7 - (day % 7),
+    #            ' '.join(name.split()[:-1]) if name.endswith('Race') else None
+#
+#
+    #        )
+    #        print(current, ',')
+
+
