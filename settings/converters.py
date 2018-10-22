@@ -9,10 +9,11 @@ def dec(number, place=None, rounding='ROUND_HALF_EVEN'):
     dec_point = Decimal('0.' + ('0' * place)) if place > 0 else Decimal('0')
     return Decimal(number).quantize(dec_point, rounding=rounding)
 
-metres_in_mile = dec('1609.34')
-miles_in_metre = dec('0.000621371')
-miles_in_km = dec('0.621371')
-km_in_mile = dec('1.60934')
+
+metres_in_mile = dec('1609.344')
+miles_in_metre = dec('0.0006213712')
+miles_in_km = dec('0.6213712')
+km_in_mile = dec('1.609344')
 
 converter_dict = {
     'metre-mile': miles_in_metre,
@@ -40,6 +41,7 @@ def timestamp(date=datetime.datetime.utcnow()):
     """Creates int representation of date based on seconds since UTC 31/12/1989 00:00."""
     date_base = datetime.datetime(year=1989, month=12, day=31)
     return int((date - date_base).total_seconds())
+
 
 def convert_to_time(string):
     """Converts given string in format 00:00:00 to datetime."""

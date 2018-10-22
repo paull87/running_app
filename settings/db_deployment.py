@@ -1,5 +1,5 @@
 import sqlite3
-
+import datetime
 
 objects_script = """
 CREATE TABLE IF NOT EXISTS VDOTHistory (
@@ -7,13 +7,18 @@ VDOTHistoryID INTEGER PRIMARY KEY,
 VDOT REAL,
 CreatedDate TIMESTAMP DEFAULT (datetime('now','localtime')));
 
+CREATE TABLE IF NOT EXISTS IntensityPoints (
+MaxHRPercent REAL NOT NULL,
+Points	REAL NOT NULL,
+PRIMARY KEY(MaxHRPercent)
+);
+
 CREATE TABLE IF NOT EXISTS Settings (
 Name TEXT,
 DateOfBirth TIMESTAMP,
 VDOTHistoryID INT,
 MaxHR INT,
 Units TEXT,
-AverageRestingHR INT,
 FOREIGN KEY(VDOTHistoryID) REFERENCES VDOTHistory(VDOTHistoryID));
 
 CREATE TABLE IF NOT EXISTS HealthStats (
@@ -51,8 +56,11 @@ FOREIGN KEY(RaceDistanceID) REFERENCES Distance(DistanceID));
 CREATE TABLE IF NOT EXISTS PlannedSchedule (
 PlannedScheduleID INTEGER PRIMARY KEY,
 ScheduleID INT NOT NULL,
+ScheduleName TEXT NOT NULL,
+PlanVDOT REAL NOT NULL,
 StartDate TIMESTAMP NOT NULL,
 EndDate TIMESTAMP NOT NULL,
+IsDeleted INT NOT NULL DEFAULT 0 CHECK(IsDeleted IN (0,1)),
 FOREIGN KEY(ScheduleID) REFERENCES Schedule(ScheduleID));
 
 CREATE TABLE IF NOT EXISTS SchedulePlan (
@@ -62,6 +70,7 @@ ScheduleWorkoutID INT NOT NULL,
 ScheduleDate TIMESTAMP NOT NULL,
 RaceDetailID INT NULL,
 Completed INT NOT NULL,
+IsDeleted INT NOT NULL DEFAULT 0 CHECK(IsDeleted IN (0,1)),
 FOREIGN KEY(PlannedScheduleID) REFERENCES PlannedSchedule(PlannedScheduleID),
 FOREIGN KEY(ScheduleWorkoutID) REFERENCES ScheduleWorkout(ScheduleWorkoutID),
 FOREIGN KEY(RaceDetailID) REFERENCES RaceDetail(RaceDetailID));
@@ -69,9 +78,11 @@ FOREIGN KEY(RaceDetailID) REFERENCES RaceDetail(RaceDetailID));
 CREATE TABLE IF NOT EXISTS Shoe (
 ShoeID INTEGER PRIMARY KEY,
 ShoeName TEXT UNIQUE NOT NULL,
+Brand TEXT,
+Description TEXT,
 StartDate TIMESTAMP DEFAULT (datetime('now','localtime')),
 DateRetired TIMESTAMP,
-PreviousMiles REAL
+PreviousMiles REAL,
 PreviousKM REAL,
 IsDefault INT NOT NULL CHECK (IsDefault IN (0,1)));
 
@@ -134,6 +145,8 @@ SchedulePlanID INT,
 Effort INT,
 RunRating INT,
 RaceDetailID INT,
+StravaID INT,
+IntensityPoints REAL,
 IsDeleted INT,
 CHECK (IsDeleted IN (0,1)),
 CHECK (Effort BETWEEN 1 AND 10),
@@ -206,6 +219,7 @@ INNER JOIN ScheduleWorkout
     ON SchedulePlan.ScheduleWorkoutID = ScheduleWorkout.ScheduleWorkoutID
 INNER JOIN Workout
     ON ScheduleWorkout.WorkoutID = Workout.WorkoutID
+WHERE SchedulePlan.IsDeleted = 0
 UNION ALL
 SELECT
     3 AS ItemPriority,
@@ -608,7 +622,7 @@ INSERT INTO Settings (Name, DateOfBirth, MaxHR, Units)
 VALUES(?,?,?,?);
 """
 
-temp_settings = ('Enter Name', '01/01/1900', 200, 'mile')
+temp_settings = ('Enter Name', datetime.datetime(1900,1,1), 200, 'mile')
 
 sql_race_times = """
 INSERT OR REPLACE INTO VDOTRacePace(DistanceID)
@@ -1055,6 +1069,91 @@ schedule_workouts = [
 ('10K 42 Miles', 'Recovery 3M - 4x 100m Strides', 1, 12, 6, None)
 ]
 
+sql_points = """INSERT INTO IntensityPoints(MaxHRPercent, Points)
+VALUES (?, ?);"""
+
+
+points = [
+    ('0', '0.1'),
+    ('65', '0.1'),
+    ('65.5', '0.105'),
+    ('66', '0.11'),
+    ('66.5', '0.116'),
+    ('67', '0.122'),
+    ('67.5', '0.1285'),
+    ('68', '0.135'),
+    ('68.5', '0.1425'),
+    ('69', '0.15'),
+    ('69.5', '0.1585'),
+    ('70', '0.167'),
+    ('70.5', '0.175'),
+    ('71', '0.183'),
+    ('71.5', '0.1915'),
+    ('72', '0.2'),
+    ('72.5', '0.2085'),
+    ('73', '0.217'),
+    ('73.5', '0.225'),
+    ('74', '0.233'),
+    ('74.5', '0.2415'),
+    ('75', '0.25'),
+    ('75.5', '0.2665'),
+    ('76', '0.283'),
+    ('76.5', '0.2915'),
+    ('77', '0.3'),
+    ('77.5', '0.3085'),
+    ('78', '0.317'),
+    ('78.5', '0.325'),
+    ('79', '0.333'),
+    ('79.5', '0.3415'),
+    ('80', '0.35'),
+    ('80.5', '0.3585'),
+    ('81', '0.367'),
+    ('81.5', '0.3795'),
+    ('82', '0.392'),
+    ('82.5', '0.4045'),
+    ('83', '0.417'),
+    ('83.5', '0.4295'),
+    ('84', '0.442'),
+    ('84.5', '0.4545'),
+    ('85', '0.467'),
+    ('85.5', '0.4795'),
+    ('86', '0.492'),
+    ('86.5', '0.5045'),
+    ('87', '0.517'),
+    ('87.5', '0.5335'),
+    ('88', '0.55'),
+    ('88.5', '0.5665'),
+    ('89', '0.583'),
+    ('89.5', '0.6'),
+    ('90', '0.617'),
+    ('90.5', '0.6335'),
+    ('91', '0.65'),
+    ('91.5', '0.6665'),
+    ('92', '0.683'),
+    ('92.5', '0.703'),
+    ('93', '0.723'),
+    ('93.5', '0.743'),
+    ('94', '0.763'),
+    ('94.5', '0.7815'),
+    ('95', '0.8'),
+    ('95.5', '0.82'),
+    ('96', '0.84'),
+    ('96.5', '0.8615'),
+    ('97', '0.883'),
+    ('97.5', '0.9'),
+    ('98', '0.917'),
+    ('98.5', '0.9385'),
+    ('99', '0.96'),
+    ('99.5', '0.98'),
+    ('100', '1')
+]
+
+unknown_shoe = [0, 'Unknown', 'Unknown', 'Unknown', 0, 0, 0]
+
+sql_unknown_shoe = """
+INSERT INTO Shoe (ShoeID, ShoeName, Brand, Description, PreviousMiles, PreviousKM, IsDefault)
+VALUES(?,?,?,?,?,?,?);
+"""
 
 def create_db(path):
     """Creates the database in the given path."""
@@ -1077,9 +1176,11 @@ def deploy_database(path):
         db.execute(sql_settings_temp, temp_settings)
         db.execute(sql_race_times)
         db.execute(sql_default_races)
+        db.execute(sql_unknown_shoe, unknown_shoe)
         db.executemany(sql_workout_temp, workout_templates)
         db.executemany(sql_schedules, schedules)
         db.executemany(sql_schedule_workouts, schedule_workouts)
+        db.executemany(sql_points, points)
         db.commit()
     except Exception as e:
         raise e
@@ -1092,239 +1193,6 @@ if __name__ == '__main__':
     #test = sqlite3.connect('C:\\PythonScripts\\FitnessApp\\FitnessDB.db')
     test = sqlite3.connect("C:\\Users\\paul.lucas\\AppData\\Roaming\\FitnessApp\\FitnessDB.db", detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 
-    #test.execute(sql_default_races)
-    #test.commit()
-    #sql = """
-    #DROP TABLE Diary;
-    #DROP TABLE SchedulePlan;
-    #"""
-    #test.executescript(sql)
-    #test.executemany(sql_schedule_workouts, schedule_workouts)
+    test.execute(sql_unknown_shoe, unknown_shoe)
+    test.commit()
 
-    #sql = """
-    #CREATE TABLE IF NOT EXISTS PlannedSchedule (
-    #PlannedScheduleID INTEGER PRIMARY KEY,
-    #ScheduleID INT NOT NULL,
-    #StartDate DATE NOT NULL,
-    #EndDate DATE NOT NULL,
-    #FOREIGN KEY(ScheduleID) REFERENCES Schedule(ScheduleID));
-#
-    #CREATE TABLE IF NOT EXISTS SchedulePlan (
-    #SchedulePlanID INTEGER PRIMARY KEY,
-    #PlannedScheduleID INT NOT NULL,
-    #ScheduleWorkoutID INT NOT NULL,
-    #ScheduleDate DATE NOT NULL,
-    #RaceDetailID INT NULL,
-    #Completed INT NOT NULL,
-    #FOREIGN KEY(PlannedScheduleID) REFERENCES PlannedSchedule(PlannedScheduleID),
-    #FOREIGN KEY(ScheduleWorkoutID) REFERENCES ScheduleWorkout(ScheduleWorkoutID),
-    #FOREIGN KEY(RaceDetailID) REFERENCES RaceDetail(RaceDetailID));
-#
-    #CREATE TABLE IF NOT EXISTS Diary (
-    #DiaryID INTEGER PRIMARY KEY,
-    #DiaryDate DATE NOT NULL,
-    #DiaryTime DATE NOT NULL,
-    #RunTypeID INT,
-    #DistanceMiles REAL,
-    #DistanceKM REAL,
-    #SpeedMPH REAL,
-    #SpeedKPH REAL,
-    #PaceMiles INT,
-    #PaceKM INT,
-    #AverageHR INT,
-    #ShoeID INT,
-    #SchedulePlanID INT,
-    #Effort INT,
-    #RunRating INT,
-    #RaceDetailID INT,
-    #IsDeleted INT,
-    #CHECK (IsDeleted IN (0,1)),
-    #CHECK (Effort BETWEEN 1 AND 10),
-    #CHECK (RunRating BETWEEN 1 AND 10),
-    #CHECK (AverageHR BETWEEN 1 AND 250),
-    #FOREIGN KEY(RunTypeID) REFERENCES RunType(RunTypeID),
-    #FOREIGN KEY(SchedulePlanID) REFERENCES SchedulePlan(SchedulePlanID),
-    #FOREIGN KEY(ShoeID) REFERENCES Shoe(ShoeID),
-    #FOREIGN KEY(RaceDetailID) REFERENCES RaceDetail(RaceDetailID));"""
-    #test.executescript(sql)
-    #test.commit()
-
-    workouts = """
-    SELECT
-    ScheduleName,
-    Workout.Name,
-    DaysFromEnd,
-    WorkoutWeek,
-    WorkoutWeekDay,
-    Distance.*
-FROM ScheduleWorkout
-INNER JOIN Schedule
-    ON ScheduleWorkout.ScheduleID = Schedule.ScheduleID
-LEFT JOIN Workout
-    ON ScheduleWorkout.WorkoutID = Workout.WorkoutID
-LEFT JOIN Distance
-    ON ScheduleWorkout.RaceDistanceID = Distance.DistanceID
-WHERE Workout.Name IS NULL;"""
-
-    for r in test.cursor().execute(workouts):
-        print(r)
-
-    print('CHeck')
-    #for r in test.cursor().execute("SELECT * FROM RaceDetail"):
-    #    print(r)
-
-    sql = "SELECT VDOT, [{0}] FROM VDOTRaceTimes WHERE time([{0}]) >= time('{1}') ORDER BY VDOT DESC LIMIT 1"
-
-    for v, t in test.cursor().execute(sql.format('HalfMarathon', '01:41:00')):
-        print(v, t, '\n')
-
-    print('Schedule Plans\n')
-
-    import pandas
-    #print(pandas.read_sql("SELECT * FROM Calendar", test))
-
-    for r in test.cursor().execute("SELECT * FROM Shoe"):
-        print(r)
-
-    #cursor = test.cursor()
-    #cursor.executemany(update_race_times, details)
-    #test.commit()
-
-    update_race_times = """
-SELECT
-    Name,
-    DefaultTarget,
-    HRZoneLow,
-    HRZoneHigh,
-    MilePace,
-    KMPace
-FROM
-    TrainingInterval
-UNION ALL
-SELECT
-    Distance.Name AS Distance,
-    'pace' as DefaultTarget,
-    NULL AS HRZoneLow,
-    NULL AS HRZoneHigh,
-    VDOTRacePace.MilePace AS Mile,
-    VDOTRacePace.KMPace AS KM
-FROM VDOTRacePace
-INNER JOIN Distance
-    ON VDOTRacePace.DistanceID = Distance.DistanceID;"""
-
-
-    for r in test.cursor().execute(update_race_times):
-        print(r)
-
-    sql = """DELETE FROM RaceDetail;
-    DELETE FROM SchedulePlan;
-    DELETE FROM PlannedSchedule;"""
-    #test.executescript(sql)
-    #test.commit()
-
-    sql = """
-    DROP VIEW Calendar;
-CREATE VIEW Calendar
-AS
-SELECT
-    1 AS ItemPriority,
-    'Race' AS ItemType,
-    RaceDetailID AS ItemID,
-    RaceDate AS ItemDate,
-    RaceName AS ItemName,
-    GoalTime AS RaceGoal,
-    ActualTime AS FinishTime
-FROM RaceDetail
-INNER JOIN Race
-    ON RaceDetail.RaceID = Race.RaceID
-UNION ALL
-SELECT
-    2 AS ItemPriority,
-    'Workout' AS ItemType,
-    SchedulePlanID AS ItemID,
-    SchedulePlan.ScheduleDate AS ItemDate,
-    Workout.Name AS ItemName,
-    NULL AS GoalTime,
-    NULL AS ActualTime
-FROM SchedulePlan
-INNER JOIN ScheduleWorkout
-    ON SchedulePlan.ScheduleWorkoutID = ScheduleWorkout.ScheduleWorkoutID
-INNER JOIN Workout
-    ON ScheduleWorkout.WorkoutID = Workout.WorkoutID
-UNION ALL
-SELECT
-    3 AS ItemPriority,
-    'Diary' AS ItemType,
-    DiaryID AS ItemID,
-    DiaryDate AS ItemDate,
-    RunType.Name AS ItemName,
-    NULL AS GoalTime,
-    NULL AS ActualTime
-FROM Diary
-INNER JOIN RunType
-    ON Diary.RunTypeID = RunType.RunTypeID;
-"""
-    #test.executescript(sql)
-    #test.commit()
-
-"""
-TrainingIntervalID INTEGER PRIMARY KEY,
-Name TEXT UNIQUE,
-DefaultTarget TEXT,
-HRZoneLow INT,
-HRZoneHigh INT,
-MilePace INT,
-KMPace INT
-"""
-
-
-sql = """
-
-CREATE TABLE IF NOT EXISTS ScheduleWorkout (
-ScheduleWorkoutID INTEGER PRIMARY KEY,
-ScheduleID INT NOT NULL,
-WorkoutID INT NULL,
-DaysFromEnd INT NOT NULL,
-WorkoutWeek INT NOT NULL,
-WorkoutWeekDay INT NOT NULL,
-RaceDistanceID INT NULL,
-FOREIGN KEY(WorkoutID) REFERENCES Workout(WorkoutID),
-FOREIGN KEY(ScheduleID) REFERENCES Schedule(ScheduleID),
-FOREIGN KEY(RaceDistanceID) REFERENCES Distance(DistanceID));
-
-CREATE TABLE IF NOT EXISTS SchedulePlan (
-SchedulePlanID INTEGER PRIMARY KEY,
-ScheduleWorkoutID INT NOT NULL,
-ScheduleDate DATE NOT NULL,
-RaceDetailID INT NULL,
-Completed INT NOT NULL,
-FOREIGN KEY(ScheduleWorkoutID) REFERENCES ScheduleWorkout(ScheduleWorkoutID),
-FOREIGN KEY(RaceDetailID) REFERENCES RaceDetail(RaceDetailID));
-
-CREATE TABLE IF NOT EXISTS Diary (
-DiaryID INTEGER PRIMARY KEY,
-DiaryDate DATE NOT NULL,
-DiaryTime DATE NOT NULL,
-RunTypeID INT,
-DistanceMiles REAL,
-DistanceKM REAL,
-SpeedMPH REAL,
-SpeedKPH REAL,
-PaceMiles INT,
-PaceKM INT,
-AverageHR INT,
-ShoeID INT,
-ScheduleWorkoutID INT,
-Effort INT,
-RunRating INT,
-RaceDetailID INT,
-IsDeleted INT,
-CHECK (IsDeleted IN (0,1)),
-CHECK (Effort BETWEEN 1 AND 10),
-CHECK (RunRating BETWEEN 1 AND 10),
-CHECK (AverageHR BETWEEN 1 AND 250),
-FOREIGN KEY(RunTypeID) REFERENCES RunType(RunTypeID),
-FOREIGN KEY(ScheduleWorkoutID) REFERENCES ScheduleWorkout(ScheduleWorkoutID),
-FOREIGN KEY(ShoeID) REFERENCES Shoe(ShoeID),
-FOREIGN KEY(RaceDetailID) REFERENCES RaceDetail(RaceDetailID));
-    """

@@ -88,6 +88,8 @@ WHERE
 
 get_current_settings = """
 SELECT
+Name,
+DateOfBirth,
 COALESCE(VDOTHistory.VDOT, 0) AS VDOT,
 MaxHR,
 Units
@@ -189,12 +191,17 @@ LEFT JOIN Distance
 WHERE ScheduleName = ?;"""
 
 add_planned_schedule = """
-INSERT INTO PlannedSchedule(ScheduleID, StartDate, EndDate)
+INSERT INTO PlannedSchedule(ScheduleID, StartDate, EndDate, ScheduleName, PlanVDOT)
 VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?);
 """
+
+get_schedules = """
+SELECT ScheduleName FROM Schedule;"""
 
 add_schedule_plan = """
 INSERT INTO SchedulePlan(ScheduleWorkoutID, ScheduleDate, RaceDetailID, PlannedScheduleID, Completed)
@@ -253,25 +260,75 @@ WHERE
     DateRetired IS NULL;
 """
 
-"""
-CREATE TABLE IF NOT EXISTS ScheduleWorkout (
-ScheduleWorkoutID INTEGER PRIMARY KEY,
-ScheduleID INT NOT NULL,
-WorkoutID INT NULL,
-DaysFromEnd INT NOT NULL,
-WorkoutWeek INT NOT NULL,
-WorkoutWeekDay INT NOT NULL,
-Race TEXT,
-FOREIGN KEY(WorkoutID) REFERENCES Workout(WorkoutID),
-FOREIGN KEY(ScheduleID) REFERENCES Schedule(ScheduleID));
+delete_schedule_plan_workouts = """
+UPDATE SchedulePlan
+SET IsDeleted = 1
+WHERE PlannedScheduleID = ?;"""
 
-CREATE TABLE IF NOT EXISTS SchedulePlan (
-SchedulePlanID INTEGER PRIMARY KEY,
-PlannedScheduleID INT NOT NULL,
-ScheduleWorkoutID INT NOT NULL,
-ScheduleDate DATE NOT NULL,
-RaceDetailID INT NULL,
-Completed INT NOT NULL,
-FOREIGN KEY(PlannedScheduleID) REFERENCES PlannedSchedule(PlannedScheduleID),
-FOREIGN KEY(ScheduleWorkoutID) REFERENCES ScheduleWorkout(ScheduleWorkoutID),
-FOREIGN KEY(RaceDetailID) REFERENCES RaceDetail(RaceDetailID));"""
+delete_schedule_plan = """
+UPDATE PlannedSchedule
+SET IsDeleted = 1
+WHERE PlannedScheduleID = ?;"""
+
+add_diary_entry = """
+INSERT INTO Diary(DiaryDate,DiaryTime,RunTypeID,DistanceMiles,DistanceKM,SpeedMPH,SpeedKPH,PaceMiles,PaceKM,AverageHR,
+    ShoeID,SchedulePlanID,Effort,RunRating,RaceDetailID,StravaID,IntensityPoints,IsDeleted)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+
+edit_diary_entry = """
+UPDATE Diary
+SET 
+    DiaryDate = ?,
+    DiaryTime = ?,
+    RunTypeID = ?,
+    DistanceMiles = ?,
+    DistanceKM = ?,
+    SpeedMPH = ?,
+    SpeedKPH = ?,
+    PaceMiles = ?,
+    PaceKM = ?,
+    AverageHR = ?,
+    ShoeID = ?,
+    SchedulePlanID = ?,
+    Effort = ?,
+    RunRating = ?,
+    RaceDetailID = ?,
+    StravaID = ?,
+    IntensityPoints = ?,
+    IsDeleted = ?
+WHERE
+    DiaryID = ?;"""
+
+get_run_types = """
+SELECT RunTypeID, Name
+FROM RunType
+ORDER BY Name;"""
+
+get_points = """
+SELECT Points
+FROM IntensityPoints
+WHERE MaxHRPercent >= ?
+ORDER BY MaxHRPercent ASC
+LIMIT 1;"""
+
+add_shoe = """
+INSERT INTO Shoe (ShoeName, Brand, Description, StartDate, DateRetired, PreviousMiles, PreviousKM, IsDefault)
+VALUES(?,?,?,?,?,?,?,?);"""
+
+amend_shoe = """
+UPDATE Shoe
+SET 
+    ShoeName = ?, 
+    Brand = ?, 
+    Description = ?, 
+    StartDate = ?, 
+    DateRetired = ?, 
+    PreviousMiles = ?, 
+    PreviousKM = ?, 
+    IsDefault = ?
+WHERE
+    ShoeID = ?;"""
+
+reset_default_shoe = """
+UPDATE Shoe
+SET IsDefault = 0;"""
