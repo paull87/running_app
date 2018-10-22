@@ -23,7 +23,7 @@ class Settings:
         self.WORKOUT_PLANS = '..\\template\\plans\\'
         self.SCHEDULE_PLANS = '..\\Workouts\\schedule\\'
         self.DATABASE_PATH = appdata_path('FitnessDB.db')
-        self.database = DB(self._connect_db())
+        self.database = DB(self.DATABASE_PATH)
         self.get_settings()
         self.zones = self.get_zones()
         self.targets = {
@@ -60,8 +60,11 @@ Data,0,workout,capabilities,"32",,wkt_name,"{2}",,num_valid_steps,"{3}",,sport,"
 
     def get_zones(self):
         """Gets the current pace and heart rate zones for workouts."""
-        zones = self.database.get_targets(self.units)
-        return zones
+        return self.database.get_targets(self.units)
+
+    def get_run_types(self):
+        """returns the list of run types."""
+        return self.database.get_run_types()
 
     def update_settings(self, field, value):
         """Updates the settings."""
@@ -118,9 +121,9 @@ Data,0,workout,capabilities,"32",,wkt_name,"{2}",,num_valid_steps,"{3}",,sport,"
         """Updates the workout details."""
         self.database.update_workout(workout)
 
-    def schedule_workouts(self, workouts, start_date, end_date, schedule_id):
+    def schedule_workouts(self, workouts, start_date, end_date, schedule_id, plan_name, vdot):
         """Adds schedule workouts to the planned schedules."""
-        self.database.schedule_workouts(workouts, start_date, end_date, schedule_id)
+        self.database.schedule_workouts(workouts, start_date, end_date, schedule_id, plan_name, vdot)
 
     def schedule_race(self, distance_id, race_date, race_name=None):
         """Adds the given race detail to race schedule."""
@@ -150,6 +153,11 @@ Data,0,workout,capabilities,"32",,wkt_name,"{2}",,num_valid_steps,"{3}",,sport,"
         except Exception as e:
             print('Unable to amend calendar file: ', e)
 
+    def add_diary(self, diary_entry):
+        """Adds or amends a diary entry."""
+        return self.database.add_diary_entry(diary_entry)
+
+
     def _connect_db(self):
         """Checks if database exists and creates it if not."""
         if not os.path.isfile(self.DATABASE_PATH):
@@ -158,6 +166,15 @@ Data,0,workout,capabilities,"32",,wkt_name,"{2}",,num_valid_steps,"{3}",,sport,"
             return sqlite3.connect(self.DATABASE_PATH, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
         except Exception as e:
             print('Unable to connect to database: ', e)
+
+    def calculate_intensity_points(self, hr, time_taken):
+        """Calculates the intensity points for the given hr and time."""
+        max_hr_percent = dec((hr / self.max_hr), 2) * 100
+        mins = dec(time_taken.total_seconds() / 60, 2)
+        points = dec(self.database.get_points(max_hr_percent))
+        total_points = points * mins
+        return dec(total_points, 3)
+
 
 
 def temp_path(filename):
