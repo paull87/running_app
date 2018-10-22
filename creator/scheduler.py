@@ -10,36 +10,38 @@ settings = Settings()
 workouts = settings.get_workouts()
 
 
-def schedule_plan(settings, plan, race_date=None, start_date=None):
+def schedule_plan(settings, plan, plan_name, race_date=None, start_date=None):
     """Adds the given plan for the scheduled dates."""
     workouts = settings.get_plan_schedule(plan)
+    if not start_date:
+        start_date = datetime.datetime.now().replace(microsecond=0, second=0, minute=0, hour=0)
     if not race_date:
         race_date = set_race_dates(start_date, workouts)
 
-    workouts['WorkoutDate'] = workouts['DaysFromEnd'].apply(lambda x: race_date - datetime.timedelta(days=x))
-    workouts['WorkoutDateString'] = workouts['WorkoutDate'].apply(lambda x: str(x))
-    workouts['RaceDetailID'] = None
-    race_indexes = workouts[(workouts['RaceDistance'].notnull()) &
-                            (workouts['WorkoutDate'] >= start_date)].index.tolist()
-    for index in race_indexes:
-        workouts.at[index, 'RaceDetailID'] = add_schedule_races(workouts.at[index, 'DistanceID'],
-                                                                  workouts.at[index, 'WorkoutDateString'])
-    add_schedule_workouts(workouts[workouts['WorkoutDate'] >= start_date], start_date, race_date)
+    workout_atts = list()
+    for workout in workouts:
+        print(workout)
+        workout_date = race_date - datetime.timedelta(days=workout.DaysFromEnd)
+        race_id = None if not workout.RaceDistance else add_schedule_races(workout.DistanceID, workout_date)
+        workout_atts.append((workout.ScheduleID, workout.ScheduleWorkoutID, workout_date, race_id))
+
+        print(workout_atts)
+    add_schedule_workouts(tuple(x for x in workout_atts if x[-2] >= start_date),
+                          start_date, race_date, plan_name, str(settings.vdot))
 
 
 def set_race_dates(start_date, workouts):
     """Sets the race date when none is provided based on the start date."""
-    all_days = workouts[workouts['WorkoutWeekDay'] >= start_date.isoweekday()]
-    plan_days_to_race = int(all_days['DaysFromEnd'].max())
+    all_days = [int(x.DaysFromEnd) for x in workouts if x.WorkoutWeekDay >= start_date.isoweekday()]
+    plan_days_to_race = max(all_days)
     extra_days = 7 - (plan_days_to_race % 7)
     return start_date + datetime.timedelta(days=plan_days_to_race + (extra_days - start_date.isoweekday()))
 
 
-def add_schedule_workouts(workouts, start_date, end_date):
+def add_schedule_workouts(workouts, start_date, end_date, plan_name, vdot):
     """Adds the plan workouts to the schedule."""
-    schedule_id = workouts['ScheduleID'].max()
-    settings.schedule_workouts(workouts.loc[:, ['ScheduleWorkoutID', 'WorkoutDateString', 'RaceDetailID']], start_date,
-                               end_date, schedule_id)
+    schedule_id = int(workouts[0][0])
+    settings.schedule_workouts([x[1:] for x in workouts], start_date, end_date, schedule_id, plan_name, vdot)
 
 
 def add_schedule_races(distance, race_date):
@@ -223,7 +225,9 @@ if __name__ == '__main__':
 
     settings = Settings()
 
-    schedule_plan(settings, 'Half Marathon 47 Miles', start_date=datetime.datetime(day=5, month=3, year=2018))
+    schedule_plan(settings, 'Half Marathon 47 Miles', 'Birmingham Half 2018',
+                  start_date=datetime.datetime(day=1, month=7, year=2018),
+                  race_date=datetime.datetime(day=14, month=10, year=2018))
 
     #create_schedule('Half Marathon 47 Miles', '04/03/2018')
     #plans = ['Half Marathon 47 Miles', 'Half Marathon 63 Miles', 'Marathon 55 Miles', '5K 40 Miles', '10K 42 Miles']
