@@ -1,7 +1,11 @@
 import datetime
-from settings.converters import convert_to_time, dec, time_to_string
-from settings.database import DB
-import pandas
+from settings.converters import convert_to_time, dec
+from collections import namedtuple
+
+
+training_pace = namedtuple('TrainingPaces', ['Distance', 'Mile', 'KM'])
+race_pace = namedtuple('RacePaces', ['Distance', 'Time'])
+race_time = namedtuple('RaceTimes', ['Distance', 'Time', 'Mile', 'KM'])
 
 
 class VDOT:
@@ -43,42 +47,43 @@ class VDOT:
     def _calculate_training_paces(self, vdot_diff):
         """Calculates the paces based on the vdot score."""
         data = list()
-        headers = ['Distance', 'Mile', 'KM']
-        vdot_score = int(self.vdot_score)
-        vdot_df_km = self.VDOT_paces[(self.VDOT_paces.VDOT >= vdot_score)
-                                         & (self.VDOT_paces.Unit == 'KM')].iloc[:2, :].copy().reset_index(drop=True)
-        vdot_df_mile = self.VDOT_paces[(self.VDOT_paces.VDOT >= vdot_score)
-                                           & (self.VDOT_paces.Unit == 'Mile')].iloc[:2, :].copy().reset_index(drop=True)
-        for head in list(vdot_df_km):
-            if head in ('VDOT', 'Unit'):
+        km_range, mile_range = self._pace_ranges()
+        ranges = len(km_range)
+        for key in mile_range[0]._fields:
+            if key in ('xVDOT', 'xUnit'):
                 continue
-            pace_diff = vdot_df_mile.at[0, head] - vdot_df_mile.at[1, head]
-            pace_add = int(dec(dec(pace_diff) * vdot_diff, 0))
-            mile_pace = vdot_df_mile.at[0, head] - pace_add
+            if ranges == 1:
+                km_pace = getattr(km_range[0], key)
+                mile_pace = getattr(km_range[0], key)
+            else:
+                pace_diff = getattr(mile_range[0], key) - getattr(mile_range[0], key)
+                pace_add = int(dec(dec(pace_diff) * vdot_diff, 0))
+                mile_pace = getattr(mile_range[0], key) - pace_add
 
-            pace_diff = vdot_df_km.at[0, head] - vdot_df_km.at[1, head]
-            pace_add = int(dec(dec(pace_diff) * vdot_diff, 0))
-            km_pace = vdot_df_km.at[0, head] - pace_add
-            data.append([head, mile_pace, km_pace])
-
-        self.training_paces = pandas.DataFrame(data, columns=headers)
-        self.training_paces.set_index('Distance', inplace=True)
+                pace_diff = getattr(km_range[0], key) - getattr(km_range[0], key)
+                pace_add = int(dec(dec(pace_diff) * vdot_diff, 0))
+                km_pace = getattr(km_range[0], key) - pace_add
+            data.append(training_pace(key[1:], mile_pace, km_pace))
+        self.training_paces = data
 
     def _calculate_race_times(self, vdot_diff):
         """Calculates the race times based on the vdot score."""
         data = list()
         vdot_score = int(self.vdot_score)
-        vdot_df = self.VDOT_racetimes[(self.VDOT_racetimes.VDOT >= vdot_score)].iloc[:2, :]
-        for head in list(vdot_df):
-            if head == 'VDOT':
+        #vdot_df = self.VDOT_racetimes[(self.VDOT_racetimes.VDOT >= vdot_score)].iloc[:2, :]
+        vdot_df = [x for x in self.VDOT_racetimes if x.xVDOT >= vdot_score]
+        for head in vdot_df[0]._fields:
+            if head == 'xVDOT':
                 continue
-            pace_diff = vdot_df.iloc[0][head] - vdot_df.iloc[1][head]
-            pace_add = int(dec(dec(pace_diff) * vdot_diff, 0))
-            data.append([head, vdot_df.iloc[0][head] - pace_add])
-
-        race_times_paces = pandas.DataFrame(data, columns=['Distance', 'Time'])
-        race_times_paces.set_index('Distance', inplace=True)
-        self.race_times = pandas.concat([race_times_paces, self.training_paces], axis=1, join='inner')
+            if len(vdot_df) == 1:
+                pace_add = 0
+            else:
+                pace_diff = getattr(vdot_df[0], head) - getattr(vdot_df[1], head)
+                pace_add = int(dec(dec(pace_diff) * vdot_diff, 0))
+            data.append(race_pace(head[1:], getattr(vdot_df[0], head) - pace_add))
+        race_paces = [x for x in self.training_paces if x.Distance in [y.Distance for y in data]]
+        self.race_times = [race_time(x[0].Distance, x[0].Time, x[1].Mile, x[1].KM) for x in
+            tuple(zip(sorted(data, key=lambda x: x.Distance), sorted(race_paces, key=lambda x: x.Distance)))]
 
     def _vdot_dec(self):
         """Returns the decimal of the current vdot score."""
@@ -93,22 +98,24 @@ class VDOT:
 
     def save_training_paces(self):
         """Formats the times of the paces so they can be saved to the config."""
-        fmt = '{hours:02d}:{minutes:02d}:{seconds:02d}'
-        details = list()
-        for distance, mile, km in self.training_paces.itertuples():
-            details.append((mile, km, distance))
-        db.update_training_pace(details)
+        db.update_training_pace([(x.Mile, x.KM, x.Distance) for x in self.training_paces])
 
     def save_race_paces(self):
         """Formats the times of the paces so they can be saved to the config."""
-        details = list()
-        for distance, time, mile, km in self.race_times.itertuples():
-            details.append((time, mile, km, distance))
-        db.update_race_pace(details)
+        db.update_race_pace([(x.Distance, x.Time, x.Mile, x.KM) for x in self.race_times])
 
+    def _pace_ranges(self):
+        """Returns the vdots that the current vdot score sits between for miles and KM"""
+        vdot_score = int(self.vdot_score)
+        km = [x for x in self.VDOT_paces if x.xVDOT >= vdot_score and x.xUnit == 'KM']
+        mile = [x for x in self.VDOT_paces if x.xVDOT >= vdot_score and x.xUnit =='Mile']
+        if len(km) > 1:
+            return km[:2], mile[:2]
+        else:
+            return km, mile
 
 if __name__ == '__main__':
-
+    from settings.settings import Settings
     settings = Settings()
     db = settings.database
 
@@ -121,11 +128,10 @@ if __name__ == '__main__':
     print('Current score:', VDOT_values.vdot_score)
     settings.update_settings('MaxHR', 189)
     settings.update_settings('Name', 'Paul Lucas')
-    settings.update_settings('DateOfBirth', '26/06/1987')
+    settings.update_settings('DateOfBirth', datetime.datetime(year=1987, month=6, day=26))
 
     print('\nTraining')
-    print(VDOT_values.training_paces)
-    for k, m, km in VDOT_values.training_paces.itertuples():
+    for k, m, km in VDOT_values.training_paces:
         print(k.ljust(15), datetime.timedelta(seconds=m), datetime.timedelta(seconds=km))
     print('\nRaces')
     print(VDOT_values.race_times)
@@ -142,7 +148,16 @@ if __name__ == '__main__':
     settings.get_zones()
 
     print('SETTINGS')
-    for r in db.connection.execute("SELECT * FROM Settings"):
+    for r in db.connection.execute("""
+SELECT
+COALESCE(VDOTHistory.VDOT, 0) AS VDOT,
+MaxHR
+Units,
+DateOfBirth
+FROM Settings
+LEFT JOIN VDOTHistory
+    ON Settings.VDOTHistoryID = VDOTHistory.VDOTHistoryID;
+"""):
         print(r)
 
     print('VDOT')
@@ -151,7 +166,7 @@ if __name__ == '__main__':
 
     print(settings.get_workouts().loc['Easy 10M'])
 
-    #print(timeit.timeit(stmt="VDOT(db)", number=100, setup="from __main__ import VDOT"))
+    print('100 runs took: {}'.format(timeit.timeit(stmt="VDOT(db)", number=100, globals=globals())))
 
     print(settings.zones)
 
