@@ -3,25 +3,25 @@ import datetime
 from settings.converters import dec
 from settings.database import DB
 from dateutil.relativedelta import relativedelta
-from VDOT.VDOT import VDOT
 
 
 class Settings:
     """Class containing the settings of the app."""
-    def __init__(self, db_path=None):
+    def __init__(self, app_path='..'):
         """Initialise the settings."""
-        self.WORKOUTS_PATH = '..\\Workouts\\'
-        self.FIT_PATH = '..\\Workouts\\FIT\\'
-        self.VDOT_RACES = '..\\VDOT\\VDOT Races.txt'
-        self.VDOT_TRAINING = '..\\VDOT\\VDOT Training.txt'
-        self.CONFIG = temp_path('config.tmp')
-        self.WORKOUT_PLANS = '..\\template\\plans\\'
-        self.SCHEDULE_PLANS = '..\\Workouts\\schedule\\'
-        self.DATABASE_PATH = db_path if db_path else appdata_path('FitnessDB.db')
+        self.APP_PATH = os.path.abspath(app_path)
+        self.WORKOUTS_PATH = os.path.join(self.APP_PATH, 'Workouts')
+        self.FIT_PATH = os.path.join(self.APP_PATH, 'Workouts', 'FIT')
+        #self.VDOT_RACES = '..\\VDOT\\VDOT Races.txt'
+        #self.VDOT_TRAINING = '..\\VDOT\\VDOT Training.txt'
+        #self.CONFIG = temp_path('config.tmp')
+        #self.WORKOUT_PLANS = '..\\template\\plans\\'
+        #self.SCHEDULE_PLANS = '..\\Workouts\\schedule\\'
+        self.DATABASE_PATH = os.path.join(self.APP_PATH, 'FitnessDB.db')
         self.database = DB(self.DATABASE_PATH)
+        self.setup_environment()
         self.get_settings()
-        self.zones = self.get_zones()
-        self.vdot_checker = VDOT(self.database, self.vdot)
+        self.get_zones()
         self.targets = {
             'target_type': '2',
         }
@@ -47,6 +47,14 @@ Definition,0,workout,capabilities,1,,wkt_name,16,,num_valid_steps,1,,,,,,,,,,,,,
 Data,0,workout,capabilities,"32",,wkt_name,"{2}",,num_valid_steps,"{3}",,sport,"1",,,,,,,,,,,,,,,,,
 """
 
+    def setup_environment(self):
+        """Creates the folders if they do not already exist."""
+        if not os.path.isdir(self.WORKOUTS_PATH):
+            os.mkdir(self.WORKOUTS_PATH)
+        if not os.path.isdir(self.FIT_PATH):
+            os.mkdir(self.FIT_PATH)
+
+
     def get_settings(self):
         """Gets the current settings from the database."""
         name, dob, vdot, hr, units = (self.database.get_current_settings())
@@ -58,7 +66,7 @@ Data,0,workout,capabilities,"32",,wkt_name,"{2}",,num_valid_steps,"{3}",,sport,"
 
     def get_zones(self):
         """Gets the current pace and heart rate zones for workouts."""
-        return self.database.get_targets(self.units)
+        self.zones = self.database.get_targets(self.units)
 
     def update_settings(self, field, value):
         """Updates the settings."""
@@ -104,17 +112,3 @@ def _create_appdata_folder(path):
     """Creates the FitnessApp folder if not exists."""
     if not os.path.isdir(path):
         os.mkdir(path)
-
-
-if __name__ == '__main__':
-    settings = Settings()
-
-    config_test = settings.get_config()
-    print(config_test)
-
-    settings.amend_config('vdot', str(dec('51.2', 1)))
-
-    config_test = settings.get_config()
-    print(config_test)
-
-    print(settings.list_plans())
