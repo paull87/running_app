@@ -5,152 +5,83 @@ import subprocess
 import datetime
 import shutil
 import uuid
-
-settings = Settings()
-workouts = settings.get_workouts()
+import ast
+from creator.workout import Workout
 
 # TODO: move create_schedule to its own script and treat as "export scheduled workouts".
 
 
-def find_workout(workout_name):
-    """Returns the current filename of the given workout."""
-    try:
-        filename = workouts[workout_name]['filename']
-        serial = workouts[workout_name]['serial']
-        if filename == '':
-            raise ValueError('File has not been created for workout. Make sure you fill in VDOT.')
-        else:
-            return filename, serial
-    except (KeyError, TypeError):
-        return None, None
+class WorkoutSync:
+    """Creates the workouts files to sync with Garmin device."""
+    jar_file = os.path.join(os.path.abspath('..'), 'FitCSVTool.jar')
 
+    def __init__(self, settings, from_date=None):
+        self.settings = settings
+        self.from_date = from_date if from_date else datetime.datetime.now().replace(microsecond=0, second=0, minute=0,
+                                                                                     hour=0)
 
-def run_fitcsvtool(path=os.path.abspath(settings.SCHEDULE_PLANS)):
-    """Calls the FitCSVTool.jar to convert the csv file to the fit file."""
-    new_name = str(uuid.uuid4()) + '.FIT'
-    csv_path = os.path.join(path, 'SCHEDULE.csv')
-    fit_path = os.path.join(path, new_name)
-    args = ['java', '-jar', 'FitCSVTool.jar', '-c', csv_path, fit_path]
-    fnull = open(os.devnull, 'w')
-    subprocess.call(args, stdout=fnull, stderr=subprocess.STDOUT)
+    def get_scheduled_workouts(self):
+        """Returns the workouts to be synced."""
+        return self.settings.database.get_scheduled_workout_details(self.from_date)
 
+    def create_workout_file(self, workout, template):
+        with open(os.path.join(self.settings.WORKOUTS_PATH, '{}.csv'.format(workout.timestamp)), 'w') as workout_file:
+            workout_file.write(template.format(workout.serial, workout.timestamp, workout.name,
+                                               len(workout.steps)))
+            for step in workout.steps:
+                workout_file.write(str(step))
 
-def create_schedule_diary_line(weeks, day, workout_date, name):
-    """Creates a line for the schedule diary."""
-    fmt = '{},{},{},{},{}\n'
-    workout_week = weeks - int(day / 7)
-    diary_fmt = 'W{:02}D{:02}'.format(workout_week, workout_date.weekday() + 1)
-    return fmt.format(diary_fmt, workout_date.strftime("%A"), day, workout_date.strftime('%d/%m/%Y'), name)
+    def create_workout(self, scheduled_workout):
+        """Creates the workouts files to be synced."""
+        workout = Workout(scheduled_workout.Name, self.settings.zones,
+                          ast.literal_eval(scheduled_workout.WorkoutJSON), self.settings.units,
+                          self.settings.max_hr)#, scheduled_workout.FileName, scheduled_workout.SerialNumber)
+        self.create_workout_file(workout, self.settings.workout_template)
+        return workout
 
+    def clear_files(self, csv_files=0, fit_files=0):
+        """Clears the files for the extensions that equal 1."""
+        extensions = list()
+        if csv_files == 1:
+            extensions.append('.csv')
+        if fit_files == 1:
+            extensions.append('.FIT')
+        for file in [x for x in os.listdir(self.settings.WORKOUTS_PATH) if os.path.splitext(x)[1] in extensions]:
+            os.remove(os.path.join(self.settings.WORKOUTS_PATH, file))
 
-def create_schedule_diary(entries):
-    """Creates a schedule"""
-    header = 'Schedule,Day,Days From Race,Date,Workout\n'
-    with open(os.path.join(os.path.abspath(settings.SCHEDULE_PLANS), 'schedule_plan.csv'), 'w') as schedule_file:
-        schedule_file.write(header)
-        schedule_file.writelines(entries)
+    def run_fitcsvtool(self, csv_path, fit_path):
+        """Calls the FitCSVTool.jar to convert the csv file to the fit file."""
+        args = ['java', '-jar', self.jar_file, '-c', csv_path, fit_path]
+        FNULL = open(os.devnull, 'w')
+        subprocess.call(args, stdout=FNULL, stderr=subprocess.STDOUT)
 
+    def create_fit_file(self, workout):
+        """Creates the csv and fit file paths and calls the FitCSVTool.jar to convert the csv file."""
+        csv_path = os.path.join(os.path.abspath(self.settings.WORKOUTS_PATH), str(workout) + '.csv')
+        fit_name = workout if workout !=  'SCHEDULE' else uuid.uuid4()
+        fit_path = os.path.join(os.path.abspath(self.settings.WORKOUTS_PATH), str(fit_name) + '.FIT')
+        self.run_fitcsvtool(csv_path, fit_path)
 
-def create_single_schedule_file(schedule, race_date):
-    """Creates the csv file for the schedule and collects the relevant fit files."""
-    weeks = 0
-    clear_schedule()
-    schedule_diary = []
-    total_weeks = max([dec(int(d) / 7, 0, 'ROUND_CEILING') for d in schedule.keys()])
-    with open(os.path.join(settings.SCHEDULE_PLANS, 'SCHEDULE.csv'), 'w') as schedule_file:
-        schedule_file.write(settings.schedule_template.format(timestamp()))
-        for day, name in sorted([(int(k), v) for k, v in schedule.items()], reverse=True):
-            filename, serial = find_workout(name)
-            workout_day = race_date - datetime.timedelta(days=day)
-            schedule_diary.append(create_schedule_diary_line(total_weeks, day, workout_day, name))
-            #if workout_day < datetime.datetime.utcnow():
-            #    continue
-            if filename:
-                schedule_file.write(schedule_step(serial, filename, timestamp(workout_day)))
-                move_workout(str(filename))
-            if weeks != int(day / 7):
-                weeks = int(day / 7)
-                print('{} Weeks to Race'.format(weeks))
-            fmt = 'W{:02}D{:02}'.format(total_weeks - weeks, workout_day.weekday() + 1)
-            print('\t{} {:10} {} - {} : {}'.format(fmt, workout_day.strftime("%A"), day, workout_day, name))
-    #print(schedule_diary)
-    create_schedule_diary(schedule_diary)
-    run_fitcsvtool()
+    def create_schedule_file(self):
+        """Creates the schedule csv container."""
+        return open(os.path.join(self.settings.WORKOUTS_PATH, 'SCHEDULE.csv'), 'w')
 
-
-def create_multi_schedule_file(schedule, race_date):
-    """Creates the csv file for the schedule and collects the relevant fit files."""
-    weeks = 0
-    clear_schedule()
-    schedule_diary = []
-    current_workouts = []
-    schedule_directory = ''
-    schedule_file = open(os.devnull, 'w')
-    i = 0
-    total_weeks = max([dec(int(d) / 7, 0, 'ROUND_CEILING') for d in schedule.keys()])
-    for day, name in sorted([(int(k), v) for k, v in schedule.items()], reverse=True):
-        filename, serial = find_workout(name)
-        workout_day = race_date - datetime.timedelta(days=day)
-        schedule_diary.append(create_schedule_diary_line(total_weeks, day, workout_day, name))
-        if workout_day < datetime.datetime.utcnow() - datetime.timedelta(4):
-            continue
-        # Create a new schedule when the limit of 30 workouts is reached.
-        if (i % 29 == 0 or i == 0) and (filename or filename in current_workouts):
-            if i > 0:
-                current_workouts = []
-                schedule_file.close()
-                run_fitcsvtool(schedule_directory)
-            schedule_directory = create_directory(workout_day.strftime('%Y%m%d'))
-            schedule_file = create_file(schedule_directory)
-            schedule_file.write(settings.schedule_template.format(timestamp()))
-            print(schedule_directory)
-        if filename:
-            schedule_file.write(schedule_step(serial, filename, timestamp(workout_day)))
-            if filename not in current_workouts:
-                move_workout(schedule_directory, str(filename))
-                current_workouts.append(filename)
-                i += 1
-        if weeks != int(day / 7):
-            weeks = int(day / 7)
-            print('{} Weeks to Race'.format(weeks))
-        schedule_day = 'W{:02}D{}'.format(total_weeks - weeks, workout_day.weekday() + 1)
-
-        print(i, '\t{} {:10} {} - {} : {}'.format(schedule_day, workout_day.strftime("%A"), day, workout_day, name))
-        add_calendar_entry(workout_day.strftime("%Y%m%d"), schedule_day + ' ' + name)
-    schedule_file.close()
-    run_fitcsvtool(schedule_directory)
-    create_schedule_diary(schedule_diary)
-
-
-def create_directory(folder):
-    """Creates a new directory to hold section of schedule."""
-    directory = os.path.join(os.path.abspath(settings.SCHEDULE_PLANS), folder)
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-    return directory
-
-
-def create_file(folder):
-    """Creates a new directory to hold section of schedule."""
-    file = open(os.path.join(folder, 'SCHEDULE.csv'), 'w')
-    return file
-
-
-def add_calendar_entry(day, workout):
-    """Adds the scheduled workout to the calendar."""
-    calendar.setdefault(day, list())
-    calendar[day].append(workout)
-    settings.amend_calendar(day, calendar[day])
-
-
-def move_workout(path, name):
-    """Copies the workout file to the schedule."""
-    new_name = 'workout_' + str(uuid.uuid4())
-    if not os.path.exists(os.path.join(os.path.abspath(settings.SCHEDULE_PLANS), name + '.csv')):
-        shutil.copyfile(
-            os.path.join(os.path.abspath(settings.FIT_PATH), name + '.FIT'),
-            os.path.join(path, new_name + '.FIT')
-        )
+    def create_schedule(self):
+        """Creates the schedule fit files for the next 30 distinct workouts."""
+        self.clear_files(csv_files=1, fit_files=1)
+        files = set()
+        with self.create_schedule_file() as schedule_file:
+            schedule_file.write(self.settings.schedule_template.format(timestamp()))
+            for scheduled_workout in self.get_scheduled_workouts():
+                if len(files) == 30:
+                    break
+                workout = self.create_workout(scheduled_workout)
+                self.create_fit_file(workout.timestamp)
+                schedule_file.write(schedule_step(workout.serial, workout.timestamp,
+                                                  timestamp(scheduled_workout.ScheduleDate)))
+                files.add(workout.timestamp)
+        self.create_fit_file('SCHEDULE')
+        self.clear_files(csv_files=1)
 
 
 def schedule_step(serial, workout, schedule_date):
@@ -160,50 +91,3 @@ def schedule_step(serial, workout, schedule_date):
     schedule = 'Data,0,schedule,manufacturer,"1",,garmin_product,"65534",,serial_number,"{}",,' \
                'time_created,"{}",,type,"0",,scheduled_time,"{}",,completed,"0",,\n'
     return schedule.format(serial, workout, schedule_date)
-
-
-def create_schedule(training_plan, end_date):
-    """Creates the schedule working back from the given race date."""
-    race_date = convert_to_date(end_date)
-    plan = settings.get_plan_schedule(training_plan)
-    #create_single_schedule_file(plan, race_date)
-    create_multi_schedule_file(plan, race_date)
-
-
-def clear_schedule(path=settings.SCHEDULE_PLANS):
-    """Clears any existing schedules."""
-    for file_name in os.listdir(path):
-        file = os.path.join(path, file_name)
-        if os.path.isfile(file):
-            os.remove(file)
-        else:
-            clear_schedule(file)
-    if path != settings.SCHEDULE_PLANS:
-        os.rmdir(path)
-
-if __name__ == '__main__':
-
-    settings = Settings()
-
-    #create_schedule('Half Marathon 47 Miles', '04/03/2018')
-    #plans = ['Half Marathon 47 Miles', 'Half Marathon 63 Miles', 'Marathon 55 Miles', '5K 40 Miles', '10K 42 Miles']
-#
-    #for plan_name in plans:
-    #    plan = settings.get_plan_schedule(plan_name)
-    #    weeks = 0
-    #    for day, name in sorted([(int(k), v) for k, v in plan.items()], reverse=True):
-    #        if weeks == 0:
-    #            weeks = int(day / 7) + 1
-    #        current = (
-    #            plan_name,
-    #            name[3:] if name.startswith('PP') else name,
-    #            day,
-    #            weeks - int(day / 7),
-    #            7 - (day % 7),
-    #            ' '.join(name.split()[:-1]) if name.endswith('Race') else None
-#
-#
-    #        )
-    #        print(current, ',')
-
-
