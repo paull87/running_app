@@ -138,6 +138,7 @@ def test_calculate_pace_metre_to_mile():
     pace_time = datetime.timedelta(seconds=35)
     assert calculate_pace(pace_time, 200, 'metre', 'mile') == datetime.timedelta(seconds=281.64)
 
+
 def test_determine_distance_type_mile_metre():
     assert determine_distance_type('mile', 'metre') == Decimal('1609.344')
 
@@ -163,7 +164,8 @@ def test_determine_distance_type_metre_km():
 
 
 def test_time_to_string_hhmmss():
-    assert time_to_string(datetime.timedelta(hours=15, minutes=14, seconds=56), '{hours}:{minutes}:{seconds}') == '15:14:56'
+    assert time_to_string(
+        datetime.timedelta(hours=15, minutes=14, seconds=56), '{hours}:{minutes}:{seconds}') == '15:14:56'
 
 
 def test_time_to_string_mmss():

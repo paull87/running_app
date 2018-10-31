@@ -1,6 +1,5 @@
 import pytest
 import os
-import datetime
 from decimal import Decimal
 from VDOT.VDOT import VDOT
 from settings.database import DB
@@ -45,12 +44,6 @@ def test_calculate_vdot_10k(database):
     vdot = VDOT(database)
     vdot.calculate_vdot('10K', '00:41:40')
     assert vdot.vdot_score == Decimal('49.55')
-
-
-def test_calculate_vdot_15k(database):
-    vdot = VDOT(database)
-    vdot.calculate_vdot('15K', '01:00:40')
-    assert vdot.vdot_score == Decimal('52.8')
 
 
 def test_calculate_vdot_15k(database):
