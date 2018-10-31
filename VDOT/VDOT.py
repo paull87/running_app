@@ -23,7 +23,7 @@ class VDOT:
         return self.VDOT_paces[item]
 
     def __repr__(self):
-        return repr(self.VDOT_paces)
+        return 'VDOT({}, {})'.format(self.db, self.current_vdot)
 
     def calculate_vdot(self, distance, time):
         """Calculates the vdot for a person based on the finish time of the distance."""
@@ -105,7 +105,7 @@ class VDOT:
 
     def save_race_paces(self):
         """Formats the times of the paces so they can be saved to the config."""
-        self.db.update_race_pace([(x.Distance, x.Time, x.Mile, x.KM) for x in self.race_times])
+        self.db.update_race_pace([(x.Time, x.Mile, x.KM, x.Distance) for x in self.race_times])
 
     def _pace_ranges(self):
         """Returns the vdots that the current vdot score sits between for miles and KM"""
@@ -127,7 +127,7 @@ if __name__ == '__main__':
 
     print(VDOT_values.race_times)
 
-    VDOT_values.calculate_vdot('HalfMarathon', '01:37:39')
+    VDOT_values.calculate_vdot('HalfMarathon', '01:36:39')
     print('Current score:', VDOT_values.vdot_score)
     settings.update_settings('MaxHR', 189)
     settings.update_settings('Name', 'Paul Lucas')
@@ -166,8 +166,6 @@ LEFT JOIN VDOTHistory
     print('VDOT')
     for r in db.connection.execute("SELECT * FROM VDOTHistory"):
         print(r)
-
-    print(settings.get_workouts().loc['Easy 10M'])
 
     print('100 runs took: {}'.format(timeit.timeit(stmt="VDOT(db)", number=100, globals=globals())))
 
