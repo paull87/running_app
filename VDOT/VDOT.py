@@ -117,6 +117,7 @@ class VDOT:
         else:
             return km, mile
 
+
 if __name__ == '__main__':
     from settings.settings import Settings
     settings = Settings()
@@ -127,7 +128,7 @@ if __name__ == '__main__':
 
     print(VDOT_values.race_times)
 
-    VDOT_values.calculate_vdot('HalfMarathon', '01:36:39')
+    VDOT_values.calculate_vdot('HalfMarathon', '01:36:38')
     print('Current score:', VDOT_values.vdot_score)
     settings.update_settings('MaxHR', 189)
     settings.update_settings('Name', 'Paul Lucas')

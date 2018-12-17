@@ -181,7 +181,7 @@ def test_delete_plan(database):
 def test_add_diary_entry(database):
     diary_entry = [None, start_date + datetime.timedelta(hours=7, minutes=45),
                    datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600, 500,
-                   152, None, None, 4, 3, None, None, 2.54, 0]
+                   152, None, None, 4, 3, None, None, 2.54, 2.54, 0]
     database.add_diary_entry(diary_entry)
     assert len(database.get_calendar_range(start_date, end_date)) == 1
 

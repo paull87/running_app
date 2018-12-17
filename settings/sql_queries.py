@@ -271,15 +271,15 @@ SET IsDeleted = 1
 WHERE PlannedScheduleID = ?;"""
 
 add_diary_entry = """
-INSERT INTO Diary(DiaryDate,DiaryTime,RunTypeID,DistanceMiles,DistanceKM,SpeedMPH,SpeedKPH,PaceMiles,PaceKM,AverageHR,
-    ShoeID,SchedulePlanID,Effort,RunRating,RaceDetailID,StravaID,IntensityPoints,IsDeleted)
-VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+INSERT INTO Diary(DiaryDate,RunTime,RunTypeID,DistanceMiles,DistanceKM,SpeedMPH,SpeedKPH,PaceMiles,PaceKM,AverageHR,
+    ShoeID,SchedulePlanID,Effort,RunRating,RaceDetailID,StravaID,IntensityPointsHR,IntensityPointsPace,IsDeleted)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 edit_diary_entry = """
 UPDATE Diary
 SET 
     DiaryDate = ?,
-    DiaryTime = ?,
+    RunTime = ?,
     RunTypeID = ?,
     DistanceMiles = ?,
     DistanceKM = ?,
@@ -294,7 +294,8 @@ SET
     RunRating = ?,
     RaceDetailID = ?,
     StravaID = ?,
-    IntensityPoints = ?,
+    IntensityPointsHR = ?,
+    IntensityPointsPace = ?,
     IsDeleted = ?
 WHERE
     DiaryID = ?;"""

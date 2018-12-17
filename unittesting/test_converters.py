@@ -174,3 +174,7 @@ def test_time_to_string_mmss():
 
 def test_time_to_string_ss():
     assert time_to_string(datetime.timedelta(hours=15, minutes=14, seconds=56), '{seconds}') == '56'
+
+
+def test_calculate_speed():
+    assert calculate_speed(5, datetime.timedelta(minutes=48, seconds=10)) == dec('6.23')

@@ -37,7 +37,7 @@ def test_get_settings(settings):
 
 
 def test_get_zones(settings):
-    assert settings.get_zones() == settings.database.get_targets('mile')
+    assert settings.zones == settings.database.get_targets('mile')
 
 
 def test_update_settings(settings):

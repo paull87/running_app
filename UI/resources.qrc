@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="MenuImages">
+    <file>icons8-back-26.png</file>
+    <file>icons8-forward-26.png</file>
+    <file>icons8-ecg-80.png</file>
+    <file>icons8-trainers-50.png</file>
+    <file>icons8-exercise-filled-50.png</file>
+    <file>icons8-spiral-bound-booklet-80.png</file>
+    <file>icons8-calendar-80.png</file>
+  </qresource>
+</RCC>
