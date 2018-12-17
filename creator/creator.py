@@ -14,7 +14,7 @@ def refresh_workouts(settings):
         create_workout_file(workout, settings.workout_template)
         delete_fit_workout(filename)
         if filename != workout.timestamp or serial != workout.serial:
-            settings.update_workout((workout.timestamp, workout.serial, name))
+            settings.db.update_workout((workout.timestamp, workout.serial, name))
         print(workout.steps)
         create_fit_file(workout.timestamp)
         delete_csv_workout(workout.timestamp)

@@ -131,7 +131,7 @@ FOREIGN KEY(DistanceID) REFERENCES Distance(DistanceID));
 CREATE TABLE IF NOT EXISTS Diary (
 DiaryID INTEGER PRIMARY KEY,
 DiaryDate TIMESTAMP NOT NULL,
-DiaryTime TIMESTAMP NOT NULL,
+RunTime TIMESTAMP NOT NULL,
 RunTypeID INT,
 DistanceMiles REAL,
 DistanceKM REAL,
@@ -146,11 +146,12 @@ Effort INT,
 RunRating INT,
 RaceDetailID INT,
 StravaID INT,
-IntensityPoints REAL,
+IntensityPointsHR REAL,
+IntensityPointsPace REAL,
 IsDeleted INT,
 CHECK (IsDeleted IN (0,1)),
-CHECK (Effort BETWEEN 1 AND 10),
-CHECK (RunRating BETWEEN 1 AND 10),
+CHECK (Effort BETWEEN 1 AND 5),
+CHECK (RunRating BETWEEN 1 AND 5),
 CHECK (AverageHR BETWEEN 1 AND 250),
 FOREIGN KEY(RunTypeID) REFERENCES RunType(RunTypeID),
 FOREIGN KEY(SchedulePlanID) REFERENCES SchedulePlan(SchedulePlanID),
@@ -800,6 +801,7 @@ schedule_workouts = [
     ('Half Marathon 47 Miles', 'Recovery 5M', 4, 12, 3, None),
     ('Half Marathon 47 Miles', 'Recovery 4M', 3, 12, 4, None),
     ('Half Marathon 47 Miles', 'Recovery 3M - 4x 100m Strides', 1, 12, 6, None),
+    ('Half Marathon 47 Miles', '10K Race', 0, 12, 7, 'Half Marathon'),
     # ('Half Marathon 63 Miles', 'Easy 9M', 82, 1, 2, None) ,
     # ('Half Marathon 63 Miles', 'Threshold 8M - 15 & 12 mins', 81, 1, 3, None) ,
     # ( 'Half Marathon 63 Miles', 'Long 10M', 80, 1, 4, None) ,
@@ -952,6 +954,7 @@ schedule_workouts = [
 ('Marathon 55 Miles', 'Dress Rehearsal 7M - 2M Marathon Pace', 4, 18, 3, None) ,
 ('Marathon 55 Miles', 'Recovery 5M - 6x 100m Strides', 2, 18, 5, None) ,
 ('Marathon 55 Miles', 'Recovery 4M', 1, 18, 6, None) ,
+('Marathon 55 Miles', 'Marathon Race', 0, 18, 7, 'Marathon') ,
 #('5K 40 Miles', 'Easy 6M - 6x 12s Hill & 6x 100m Strides', 82, 1, 2, None) ,
 #('5K 40 Miles', 'Long 8M', 81, 1, 3, None) ,
 #('5K 40 Miles', 'Threshold 7M - 4x 6 mins', 79, 1, 5, None) ,
@@ -1066,7 +1069,8 @@ schedule_workouts = [
 ('10K 42 Miles', 'Recovery 3M', 5, 12, 2, None) ,
 ('10K 42 Miles', 'Recovery 4M', 4, 12, 3, None) ,
 ('10K 42 Miles', 'Recovery 4M', 2, 12, 5, None) ,
-('10K 42 Miles', 'Recovery 3M - 4x 100m Strides', 1, 12, 6, None)
+('10K 42 Miles', 'Recovery 3M - 4x 100m Strides', 1, 12, 6, None),
+('10K 42 Miles', '10K Race', 0, 12, 7, '10K')
 ]
 
 sql_points = """INSERT INTO IntensityPoints(MaxHRPercent, Points)

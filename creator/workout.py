@@ -12,7 +12,7 @@ class Workout:
     next_timestamp = timestamp()
     next_serial = random.randrange(10000000, 99990000)
 
-    def __init__(self, name, paces, run, unit, max_hr, timestamp, serial):
+    def __init__(self, name, paces, run, unit, max_hr, timestamp=None, serial=None):
         """Initialise the workout."""
         self.name = name
         self.timestamp = Workout._get_next_timestamp(timestamp)
@@ -36,18 +36,18 @@ class Workout:
     @classmethod
     def _get_next_timestamp(cls, timestamp):
         """Generate the next serial for the container."""
-        if len(timestamp) > 1:
+        if timestamp:
             return timestamp
-        result = cls.next_timestamp
+        result = str(cls.next_timestamp)
         cls.next_timestamp += 1
         return result
 
     @classmethod
     def _get_serial_number(cls, serial):
         """Generates the serial number based on the timestamp"""
-        if len(serial) > 1:
+        if serial:
             return serial
-        result = cls.next_serial
+        result = str(cls.next_serial)
         cls.next_serial += 1
         return result
 
@@ -131,6 +131,10 @@ class Workout:
 
         return repeat_id
 
+    def get_paces_att(self, workout_type, attribute_name):
+        """Returns the attribute for the given workout type."""
+        return getattr([x for x in self.paces if x.Name == workout_type][0], attribute_name)
+
     def create_standard_step(self, run):
         """Creates a standard workout for a distance or length of time"""
         steps = []
@@ -164,14 +168,14 @@ class Workout:
         """Creates the step for a workout."""
         # Create targets
         if run_target == 'pace':
-            run_pace = int(self.paces.at[workout_type, 'Pace'])
+            run_pace = int(self.get_paces_att(workout_type, 'Pace'))
             target_value_low = calculate_metres_per_sec(datetime.timedelta(seconds=run_pace), self.units)
             target_value_high = calculate_metres_per_sec(datetime.timedelta(seconds=run_pace - pace_add), self.units)
             targets = self.get_pace_targets(target_value_high, target_value_low)
         elif run_target == 'hr':
-            target_value_low = dec((dec(self.paces.at[workout_type, 'HRZoneLow'], 2) * dec(self.max_hr, 0)) + 100, 0
+            target_value_low = dec((dec(self.get_paces_att(workout_type, 'HRZoneLow'), 2) * dec(self.max_hr, 0)) + 100, 0
                                    , 'ROUND_FLOOR')
-            target_value_high = dec((dec(self.paces.at[workout_type, 'HRZoneHigh'], 2) * dec(self.max_hr, 0)) + 100, 0
+            target_value_high = dec((dec(self.get_paces_att(workout_type, 'HRZoneHigh'), 2) * dec(self.max_hr, 0)) + 100, 0
                                     , 'ROUND_CEILING')
             targets = self.get_hr_targets(target_value_high, target_value_low)
         else:  # run_target == 'none':
@@ -225,8 +229,8 @@ class Workout:
     def determine_target(self, workout_type):
         """Determines the target for that type of run."""
         try:
-            return self.paces.at[workout_type, 'DefaultTarget']
-        except KeyError as e:  # return pace as key error assumes it is race distance.
+            return self.get_paces_att(workout_type, 'DefaultTarget')
+        except IndexError as e:  # return pace as key error assumes it is race distance.
             return 'pace'
 
 

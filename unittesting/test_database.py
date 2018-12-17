@@ -63,7 +63,7 @@ def test_get_vdot_race_times_vdots(database):
 def test_get_vdot_race_times_fields(database):
     fields = database.get_vdot_race_times()[0]._fields
     assert fields == ('xVDOT', 'x1500', 'xMile', 'x2Mile', 'x3000', 'x5000', 'x10K', 'x15K', 'x10Mile', 'xHalfMarathon',
-                     'xMarathon')
+                      'xMarathon')
 
 
 def test_vdot_range_mid(database):
@@ -181,7 +181,7 @@ def test_delete_plan(database):
 def test_add_diary_entry(database):
     diary_entry = [None, start_date + datetime.timedelta(hours=7, minutes=45),
                    datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600, 500,
-                   152, None, None, 4, 3, None, None, 2.54, 0]
+                   152, None, None, 4, 3, None, None, 2.54, 2.54, 0]
     database.add_diary_entry(diary_entry)
     assert len(database.get_calendar_range(start_date, end_date)) == 1
 
@@ -215,11 +215,13 @@ def test_add_shoe(database):
 
 
 def test_amend_shoe(database):
-    database.add_amend_shoe((None, 'TestShoe', 'TestBrand', 'TestDes', datetime.datetime(2018, 11, 1), None, 0,
-                                    0, 1))
-    database.add_amend_shoe((1, 'TestShoeChanged', 'TestBrand', 'TestDes', datetime.datetime(2018, 11, 1), None, 0,
-                             0, 0))
+    database.add_amend_shoe((None, 'TestShoe', 'TestBrand', 'TestDes', datetime.datetime(2018, 11, 1), None, 0, 0, 1))
+    database.add_amend_shoe((1, 'TestShoeChanged', 'TestBrand', 'TestDes', datetime.datetime(2018, 11, 1), None, 0, 0,
+                             0))
     assert database.get_shoe_list() == [(0, 'Unknown', 0), (1, 'TestShoeChanged', 0)]
 
 
-
+def test_get_scheduled_workout_details(database):
+    schedule_workouts(database)
+    fields = database.get_scheduled_workout_details(datetime.datetime(2018, 1, 1))[0]._fields
+    assert fields == ('Name', 'WorkoutJSON', 'FileName', 'SerialNumber', 'ScheduleDate')

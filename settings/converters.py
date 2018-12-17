@@ -87,6 +87,11 @@ def time_to_string(time, fmt):
     return fmt.format(**d)
 
 
+def calculate_speed(distance, time):
+    hours = dec(time.total_seconds() / 3600)
+    return dec(distance / hours, 2)
+
+
 if __name__ == '__main__':
     print('Mile Conversions')
     miles = dec('2')

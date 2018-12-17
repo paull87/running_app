@@ -11,22 +11,24 @@ race_time = namedtuple('RaceTimes', ['Distance', 'Time', 'Mile', 'KM'])
 class VDOT:
     """Contains the VDOT values for the race and training paces."""
     def __init__(self, db, current_vdot=None):
-        self.VDOT_paces = db.get_vdot_paces()
-        self.VDOT_racetimes = db.get_vdot_race_times()
+        self.db = db
+        self.VDOT_paces = self.db.get_vdot_paces()
+        self.VDOT_racetimes = self.db.get_vdot_race_times()
+        self.current_vdot = current_vdot
         self.vdot_score = current_vdot
-        self.training_paces = db.get_training_paces()
-        self.race_times = db.get_race_paces()
+        self.training_paces = self.db.get_training_paces()
+        self.race_times = self.db.get_race_paces()
 
     def __getitem__(self, item):
         return self.VDOT_paces[item]
 
     def __repr__(self):
-        return repr(self.VDOT_paces)
+        return 'VDOT({}, {})'.format(self.db, self.current_vdot)
 
     def calculate_vdot(self, distance, time):
         """Calculates the vdot for a person based on the finish time of the distance."""
         time_seconds = convert_to_time(time).total_seconds()
-        vdot, max_time, min_time = db.vdot_range(distance, time_seconds)
+        vdot, max_time, min_time = self.db.vdot_range(distance, time_seconds)
         vdot_distance_diff = max_time - min_time
         finish_distance_diff = min_time - time_seconds
         if vdot_distance_diff == 0:
@@ -91,18 +93,19 @@ class VDOT:
 
     def save_vdot(self):
         """Saves the paces and vdot to the config for later use."""
-        if self.vdot_score != settings.vdot:
-            db.update_vdot(str(self.vdot_score))
+        if self.vdot_score != self.current_vdot:
+            self.db.update_vdot(str(self.vdot_score))
             self.save_race_paces()
             self.save_training_paces()
+            self.current_vdot = self.vdot_score
 
     def save_training_paces(self):
         """Formats the times of the paces so they can be saved to the config."""
-        db.update_training_pace([(x.Mile, x.KM, x.Distance) for x in self.training_paces])
+        self.db.update_training_pace([(x.Mile, x.KM, x.Distance) for x in self.training_paces])
 
     def save_race_paces(self):
         """Formats the times of the paces so they can be saved to the config."""
-        db.update_race_pace([(x.Distance, x.Time, x.Mile, x.KM) for x in self.race_times])
+        self.db.update_race_pace([(x.Time, x.Mile, x.KM, x.Distance) for x in self.race_times])
 
     def _pace_ranges(self):
         """Returns the vdots that the current vdot score sits between for miles and KM"""
@@ -114,6 +117,7 @@ class VDOT:
         else:
             return km, mile
 
+
 if __name__ == '__main__':
     from settings.settings import Settings
     settings = Settings()
@@ -124,7 +128,7 @@ if __name__ == '__main__':
 
     print(VDOT_values.race_times)
 
-    VDOT_values.calculate_vdot('HalfMarathon', '01:37:39')
+    VDOT_values.calculate_vdot('HalfMarathon', '01:36:38')
     print('Current score:', VDOT_values.vdot_score)
     settings.update_settings('MaxHR', 189)
     settings.update_settings('Name', 'Paul Lucas')
@@ -163,8 +167,6 @@ LEFT JOIN VDOTHistory
     print('VDOT')
     for r in db.connection.execute("SELECT * FROM VDOTHistory"):
         print(r)
-
-    print(settings.get_workouts().loc['Easy 10M'])
 
     print('100 runs took: {}'.format(timeit.timeit(stmt="VDOT(db)", number=100, globals=globals())))
 

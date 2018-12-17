@@ -271,15 +271,15 @@ SET IsDeleted = 1
 WHERE PlannedScheduleID = ?;"""
 
 add_diary_entry = """
-INSERT INTO Diary(DiaryDate,DiaryTime,RunTypeID,DistanceMiles,DistanceKM,SpeedMPH,SpeedKPH,PaceMiles,PaceKM,AverageHR,
-    ShoeID,SchedulePlanID,Effort,RunRating,RaceDetailID,StravaID,IntensityPoints,IsDeleted)
-VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+INSERT INTO Diary(DiaryDate,RunTime,RunTypeID,DistanceMiles,DistanceKM,SpeedMPH,SpeedKPH,PaceMiles,PaceKM,AverageHR,
+    ShoeID,SchedulePlanID,Effort,RunRating,RaceDetailID,StravaID,IntensityPointsHR,IntensityPointsPace,IsDeleted)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 edit_diary_entry = """
 UPDATE Diary
 SET 
     DiaryDate = ?,
-    DiaryTime = ?,
+    RunTime = ?,
     RunTypeID = ?,
     DistanceMiles = ?,
     DistanceKM = ?,
@@ -294,7 +294,8 @@ SET
     RunRating = ?,
     RaceDetailID = ?,
     StravaID = ?,
-    IntensityPoints = ?,
+    IntensityPointsHR = ?,
+    IntensityPointsPace = ?,
     IsDeleted = ?
 WHERE
     DiaryID = ?;"""
@@ -332,3 +333,17 @@ WHERE
 reset_default_shoe = """
 UPDATE Shoe
 SET IsDefault = 0;"""
+
+get_scheduled_workout_details = """
+SELECT  Workout.Name, Workout.WorkoutJSON, Workout.FileName, Workout.SerialNumber, SchedulePlan.ScheduleDate
+FROM PlannedSchedule
+INNER JOIN SchedulePlan
+	ON PlannedSchedule.PlannedScheduleID = SchedulePlan.PlannedScheduleID
+INNER JOIN ScheduleWorkout
+	on SchedulePlan.ScheduleWorkoutID =  ScheduleWorkout.ScheduleWorkoutID
+INNER JOIN Workout
+	ON ScheduleWorkout.WorkoutID = Workout.WorkoutID
+WHERE
+	PlannedSchedule.IsDeleted = 0
+	AND SchedulePlan.IsDeleted = 0
+	AND SchedulePlan.ScheduleDate >= ?;"""

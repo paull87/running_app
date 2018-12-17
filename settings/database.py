@@ -107,13 +107,12 @@ class DB:
     def schedule_workouts(self, workouts, start_date, end_date, schedule_id, plan_name, vdot):
         """Adds a new planned schedule record and the workouts associated with it."""
         cursor = self.connection.cursor()
-        print((schedule_id, start_date, end_date, plan_name, vdot))
         cursor.execute(sql_queries.add_planned_schedule, (schedule_id, start_date, end_date, plan_name, vdot))
         planned_schedule_id = cursor.lastrowid
         cursor.executemany(sql_queries.add_schedule_plan, [x + (planned_schedule_id,) for x in workouts])
         self.connection.commit()
 
-    def schedule_race(self, distance_id, race_date, race_name):
+    def schedule_race(self, distance_id, race_date, race_name=None):
         """Adds a new race schedule record."""
         cursor = self.connection.cursor()
         if race_name:
@@ -169,6 +168,11 @@ class DB:
         """Returns the points for the given HR."""
         result = self.connection.cursor().execute(sql_queries.get_points, (str(hr),)).fetchone()
         return result[0] if result else 0.0
+
+    def get_scheduled_workout_details(self, start_date):
+        """Returns all scheduled workouts after a given date."""
+        return named_tuple_result('ScheduledWorkouts', self.connection.execute(
+            sql_queries.get_scheduled_workout_details, (start_date,)))
 
 
 def named_tuple_result(name, results):
