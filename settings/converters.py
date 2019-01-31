@@ -69,7 +69,7 @@ def calculate_metres_per_sec(pace, dist_type):
 def calculate_pace(time, distance, dis_type, pace=None):
     """Converts the given time and distance to a miles pace."""
     conversion = determine_distance_type(dis_type, pace) if pace else 1
-    percentage = dec(1 / (distance * conversion))
+    percentage = 0 if distance == 0 else dec(1 / (distance * conversion))
     seconds = dec(dec(time.total_seconds()) * percentage, 2)
     return datetime.timedelta(seconds=float(seconds))
 

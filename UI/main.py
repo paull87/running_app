@@ -10,6 +10,8 @@ from creator.creator import refresh_workouts
 import Calendar
 import MainMenu
 import Diary
+import ShoeList
+import ShoeDetail
 
 settings = Settings()
 
@@ -101,7 +103,18 @@ class DiaryWindow(QMainWindow, Diary.Ui_Diary):
 
     def complete_form(self):
         """Checks that the form has been completed before saving/editing."""
+        pass
 
+class ShoeWindow(QMainWindow, ShoeList.Ui_ShoeList):
+    def __init__(self):
+        QMainWindow.__init__(self)
+        self.setupUi(self)
+
+
+class ShoeWindow(QMainWindow, ShoeDetail.Ui_ShoeDetail):
+    def __init__(self):
+        QMainWindow.__init__(self)
+        self.setupUi(self)
 
 
 class Window(QMainWindow, MainMenu.Ui_RunningApp):
@@ -110,15 +123,20 @@ class Window(QMainWindow, MainMenu.Ui_RunningApp):
         self.setupUi(self)
         self.calendar_window = CalendarWindow()
         self.diary_window = DiaryWindow()
+        self.shoe_window = ShoeWindow()
         # Set action for clicking browse button
         self.buttonCalendar.clicked.connect(self.open_calendar)
         self.buttonDiary.clicked.connect(self.open_diary)
+        self.buttonShoe.clicked.connect(self.open_shoe_list)
 
     def open_calendar(self):
         self.calendar_window.show()
 
     def open_diary(self):
         self.diary_window.show()
+
+    def open_shoe_list(self):
+        self.shoe_window.show()
 
 
 app = QApplication(sys.argv)

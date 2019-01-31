@@ -252,12 +252,30 @@ ORDER BY
 
 get_shoe_list = """
 SELECT
-    ShoeID,
+    Shoe.ShoeID,
     ShoeName,
     IsDefault
 FROM Shoe
-WHERE
-    DateRetired IS NULL;
+WHERE DateRetired IS NULL;
+"""
+
+get_shoe_list_complete = """
+SELECT
+    Shoe.ShoeID,
+    ShoeName,
+    Brand,
+    StartDate,
+    DateRetired,
+    COALESCE(SUM(DistanceMiles), 0.0) AS MilesRun,
+    COALESCE(SUM(DistanceKM), 0.0) AS KMRun,
+    COALESCE(SUM(RunTime), 0.0) AS TimeRunning,
+    COALESCE(MAX(DistanceMiles), 0.0) AS LongestRunMile,
+    COALESCE(MAX(DistanceKM), 0.0) AS LongestRunKM,
+    IsDefault
+FROM Shoe
+LEFT JOIN Diary
+    ON Diary.ShoeID = Shoe.ShoeID
+WHERE Shoe.ShoeID > 0;
 """
 
 delete_schedule_plan_workouts = """

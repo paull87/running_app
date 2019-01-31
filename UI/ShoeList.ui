@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Diary</class>
+ <widget class="QMainWindow" name="Diary">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1031</width>
+    <height>243</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTableWidget" name="tableWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>1011</width>
+      <height>192</height>
+     </rect>
+    </property>
+    <column>
+     <property name="text">
+      <string>Name</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>Brand</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>StartDate</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>DateBought</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>DateRetired</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>KMRun</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>AveragePaceMile</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>AveragePaceKM</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>LongestRunMile</string>
+     </property>
+    </column>
+    <column>
+     <property name="text">
+      <string>LongestRunKM</string>
+     </property>
+    </column>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1031</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

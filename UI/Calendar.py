@@ -88,14 +88,14 @@ class CustomList(QtWidgets.QListWidget):
         mimeData = self.model().mimeData(self.selectedIndexes())
         drag.setMimeData(mimeData)
 
-        if drag.start(QtCore.Qt.MoveAction) == QtCore.Qt.MoveAction:
+        if drag.exec_(QtCore.Qt.MoveAction) == QtCore.Qt.MoveAction:
             for item in self.selectedItems():
                 self.takeItem(self.row(item))
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.ignore()
-        elif event.source().currentItem().item_type != 'Workout': # Only allow Workouts to be moved
+        elif event.source().currentItem().item_type != 'Workout':  # Only allow Workouts to be moved
             event.ignore()
         else:
             event.accept()

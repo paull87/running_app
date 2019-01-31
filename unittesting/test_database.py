@@ -205,6 +205,7 @@ def test_get_points_mid(database):
 
 
 def test_get_shoe_list(database):
+    print(database.get_shoe_list_detail())
     assert database.get_shoe_list() == [(0, 'Unknown', 0)]
 
 
@@ -225,3 +226,13 @@ def test_get_scheduled_workout_details(database):
     schedule_workouts(database)
     fields = database.get_scheduled_workout_details(datetime.datetime(2018, 1, 1))[0]._fields
     assert fields == ('Name', 'WorkoutJSON', 'FileName', 'SerialNumber', 'ScheduleDate')
+
+
+def test_get_shoe_list_detail_no_shoes(database):
+    assert database.get_shoe_list_detail() == list()
+
+
+def test_get_shoe_list_detail_no_shoes(database):
+    database.add_amend_shoe((None, 'TestShoe', 'TestBrand', 'TestDes', datetime.datetime(2018, 11, 1), None, 0, 0, 1))
+    assert database.get_shoe_list_detail() == [(1, 'TestShoe', 'TestBrand', datetime.datetime(2018, 11, 1), None,
+                                               0, 0, 0, 0, 0, 1)]
