@@ -131,6 +131,11 @@ class DB:
         """Returns all available shoes."""
         return self.connection.cursor().execute(sql_queries.get_shoe_list).fetchall()
 
+    def get_shoe_detail(self, shoe_id):
+        """Returns the details of the given shoe id."""
+        return named_tuple_result('ShoeDetail', self.connection.execute(
+            sql_queries.get_shoe_detail, (shoe_id,)))[0]
+
     def get_shoe_list_detail(self):
         """Returns all available shoes and their details."""
         return [x for x in self.connection.cursor().execute(sql_queries.get_shoe_list_complete).fetchall()

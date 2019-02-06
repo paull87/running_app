@@ -232,7 +232,13 @@ def test_get_shoe_list_detail_no_shoes(database):
     assert database.get_shoe_list_detail() == list()
 
 
-def test_get_shoe_list_detail_no_shoes(database):
+def test_get_shoe_list_detail_single_shoe(database):
     database.add_amend_shoe((None, 'TestShoe', 'TestBrand', 'TestDes', datetime.datetime(2018, 11, 1), None, 0, 0, 1))
     assert database.get_shoe_list_detail() == [(1, 'TestShoe', 'TestBrand', datetime.datetime(2018, 11, 1), None,
                                                0, 0, 0, 0, 0, 1)]
+
+
+def test_get_shoe_detail_fields(database):
+    database.add_amend_shoe((None, 'TestShoe', 'TestBrand', 'TestDes', datetime.datetime(2018, 11, 1), None, 0, 0, 1))
+    assert database.get_shoe_detail(1)._fields == ('ShoeID', 'ShoeName', 'Brand', 'Description', 'StartDate', 'DateRetired',
+                                                  'PreviousMiles', 'PreviousKM', 'IsDefault')

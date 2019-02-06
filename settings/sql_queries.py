@@ -278,6 +278,21 @@ LEFT JOIN Diary
 WHERE Shoe.ShoeID > 0;
 """
 
+get_shoe_detail = """
+SELECT
+    ShoeID,
+    ShoeName,
+    Brand,
+    Description,
+    StartDate,
+    DateRetired,
+    PreviousMiles,
+    PreviousKM,
+    isDefault
+FROM Shoe
+WHERE ShoeID = ?;
+"""
+
 delete_schedule_plan_workouts = """
 UPDATE SchedulePlan
 SET IsDeleted = 1

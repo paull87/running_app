@@ -7,11 +7,15 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from settings.settings import Settings
+
+settings= Settings()
 
 class Ui_ShoeDetail(object):
     def setupUi(self, ShoeDetail):
         ShoeDetail.setObjectName("ShoeDetail")
         ShoeDetail.resize(800, 600)
+        ShoeDetail.setWindowModality(QtCore.Qt.ApplicationModal)
         self.centralwidget = QtWidgets.QWidget(ShoeDetail)
         self.centralwidget.setObjectName("centralwidget")
         self.lineName = QtWidgets.QLineEdit(self.centralwidget)
@@ -63,6 +67,21 @@ class Ui_ShoeDetail(object):
 
         self.retranslateUi(ShoeDetail)
         QtCore.QMetaObject.connectSlotsByName(ShoeDetail)
+
+    def get_shoe_detail(self, shoe_id):
+        shoe = settings.database.get_shoe_detail(shoe_id)
+        self.lineName.setText(shoe.ShoeName)
+        self.lineBrand.setText(shoe.Brand)
+        self.lineDescription.setText(shoe.Description)
+        self.radioDefault.setChecked(bool(shoe.IsDefault))
+        if shoe.StartDate is not None:
+            date_bought = QtCore.QDate(shoe.StartDate.year, shoe.StartDate.month, shoe.StartDate.day)
+            self.dateBought.setDate(date_bought)
+        if shoe.DateRetired is not None:
+            date_retired = QtCore.QDate(shoe.DateRetired.year, shoe.DateRetired.month, shoe.DateRetired.day)
+            self.dateRetired.setDate(date_retired)
+        self.linePrevMiles.setText(str(shoe.PreviousMiles))
+        self.linePrevKM.setText(str(shoe.PreviousKM))
 
     def retranslateUi(self, ShoeDetail):
         _translate = QtCore.QCoreApplication.translate

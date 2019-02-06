@@ -8,9 +8,15 @@
 
 from settings.settings import Settings
 from PyQt5 import QtCore, QtGui, QtWidgets
+import ShoeDetail
 import datetime
 
 settings = Settings()
+
+class ShoeDetailWindow(QtWidgets.QMainWindow, ShoeDetail.Ui_ShoeDetail):
+    def __init__(self):
+        QtWidgets.QMainWindow.__init__(self)
+        self.setupUi(self)
 
 class Ui_ShoeList(object):
     def setupUi(self, ShoeList):
@@ -18,6 +24,7 @@ class Ui_ShoeList(object):
         ShoeList.resize(1031, 243)
         ShoeList.setStyleSheet("")
         ShoeList.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.shoe_detail_window = ShoeDetailWindow()
         self.centralwidget = QtWidgets.QWidget(ShoeList)
         self.centralwidget.setObjectName("centralwidget")
         self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
@@ -48,6 +55,13 @@ class Ui_ShoeList(object):
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(10, item)
         ShoeList.setCentralWidget(self.centralwidget)
+        self.buttonAdd = QtWidgets.QPushButton(self.centralwidget)
+        self.buttonAdd.setGeometry(QtCore.QRect(913, 210, 91, 32))
+        self.buttonAdd.setObjectName("buttonAdd")
+        self.buttonEdit = QtWidgets.QPushButton(self.centralwidget)
+        self.buttonEdit.setGeometry(QtCore.QRect(810, 210, 91, 32))
+        self.buttonEdit.setObjectName("buttonEdit")
+        self.buttonEdit.clicked.connect(self.open_shoe_detail)
         self.menubar = QtWidgets.QMenuBar(ShoeList)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1031, 22))
         self.menubar.setObjectName("menubar")
@@ -56,6 +70,12 @@ class Ui_ShoeList(object):
 
         self.retranslateUi(ShoeList)
         QtCore.QMetaObject.connectSlotsByName(ShoeList)
+
+    def open_shoe_detail(self):
+        if len(self.tableWidget.selectedIndexes()) > 0:
+            row = [x.row() for x in self.tableWidget.selectedIndexes()][-1]
+            self.shoe_detail_window.get_shoe_detail(self.tableWidget.item(row, 0).text())
+            self.shoe_detail_window.show()
 
     def insert_shoes(self):
         for row in settings.database.get_shoe_list_detail():
@@ -93,6 +113,8 @@ class Ui_ShoeList(object):
         item.setText(_translate("ShoeList", "LongestRunMile"))
         item = self.tableWidget.horizontalHeaderItem(10)
         item.setText(_translate("ShoeList", "LongestRunKM"))
+        self.buttonAdd.setText(_translate("ShoeList", "Add"))
+        self.buttonEdit.setText(_translate("ShoeList", "Edit"))
 
 
 if __name__ == "__main__":

@@ -105,13 +105,8 @@ class DiaryWindow(QMainWindow, Diary.Ui_Diary):
         """Checks that the form has been completed before saving/editing."""
         pass
 
-class ShoeWindow(QMainWindow, ShoeList.Ui_ShoeList):
-    def __init__(self):
-        QMainWindow.__init__(self)
-        self.setupUi(self)
 
-
-class ShoeWindow(QMainWindow, ShoeDetail.Ui_ShoeDetail):
+class ShoeListWindow(QMainWindow, ShoeList.Ui_ShoeList):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setupUi(self)
@@ -123,7 +118,7 @@ class Window(QMainWindow, MainMenu.Ui_RunningApp):
         self.setupUi(self)
         self.calendar_window = CalendarWindow()
         self.diary_window = DiaryWindow()
-        self.shoe_window = ShoeWindow()
+        self.shoe_window = ShoeListWindow()
         # Set action for clicking browse button
         self.buttonCalendar.clicked.connect(self.open_calendar)
         self.buttonDiary.clicked.connect(self.open_diary)
