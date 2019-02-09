@@ -25,6 +25,7 @@ class Ui_ShoeList(object):
         ShoeList.setStyleSheet("")
         ShoeList.setWindowModality(QtCore.Qt.ApplicationModal)
         self.shoe_detail_window = ShoeDetailWindow()
+        self.shoe_detail_window.parent_window = self
         self.centralwidget = QtWidgets.QWidget(ShoeList)
         self.centralwidget.setObjectName("centralwidget")
         self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
@@ -58,10 +59,11 @@ class Ui_ShoeList(object):
         self.buttonAdd = QtWidgets.QPushButton(self.centralwidget)
         self.buttonAdd.setGeometry(QtCore.QRect(913, 210, 91, 32))
         self.buttonAdd.setObjectName("buttonAdd")
+        self.buttonAdd.clicked.connect(self.add_shoe_detail)
         self.buttonEdit = QtWidgets.QPushButton(self.centralwidget)
         self.buttonEdit.setGeometry(QtCore.QRect(810, 210, 91, 32))
         self.buttonEdit.setObjectName("buttonEdit")
-        self.buttonEdit.clicked.connect(self.open_shoe_detail)
+        self.buttonEdit.clicked.connect(self.edit_shoe_detail)
         self.menubar = QtWidgets.QMenuBar(ShoeList)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1031, 22))
         self.menubar.setObjectName("menubar")
@@ -71,16 +73,21 @@ class Ui_ShoeList(object):
         self.retranslateUi(ShoeList)
         QtCore.QMetaObject.connectSlotsByName(ShoeList)
 
-    def open_shoe_detail(self):
+    def edit_shoe_detail(self):
         if len(self.tableWidget.selectedIndexes()) > 0:
             row = [x.row() for x in self.tableWidget.selectedIndexes()][-1]
             self.shoe_detail_window.get_shoe_detail(self.tableWidget.item(row, 0).text())
             self.shoe_detail_window.show()
 
+    def add_shoe_detail(self):
+        self.shoe_detail_window.reset_shoe_detail()
+        self.shoe_detail_window.show()
+
     def insert_shoes(self):
+        self.tableWidget.setRowCount(0)
         for row in settings.database.get_shoe_list_detail():
-            rowPosition = self.tableWidget.rowCount()
-            self.tableWidget.insertRow(rowPosition)
+            row_pos = self.tableWidget.rowCount()
+            self.tableWidget.insertRow(row_pos)
             for idx in range(len(row)):
                 if isinstance(row[idx], datetime.datetime):
                     item = row[idx].strftime('%Y-%m-%d')
@@ -88,7 +95,7 @@ class Ui_ShoeList(object):
                     item = ''
                 else:
                     item = str(row[idx])
-                self.tableWidget.setItem(rowPosition, idx, QtWidgets.QTableWidgetItem(item))
+                self.tableWidget.setItem(row_pos, idx, QtWidgets.QTableWidgetItem(item))
 
     def retranslateUi(self, ShoeList):
         _translate = QtCore.QCoreApplication.translate

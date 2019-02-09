@@ -138,8 +138,7 @@ class DB:
 
     def get_shoe_list_detail(self):
         """Returns all available shoes and their details."""
-        return [x for x in self.connection.cursor().execute(sql_queries.get_shoe_list_complete).fetchall()
-                if x[0]]
+        return [x for x in self.connection.cursor().execute(sql_queries.get_shoe_list_complete).fetchall()]
 
     def delete_workout_plan(self, plan_id):
         """Deletes the given plan ID."""

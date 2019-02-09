@@ -275,7 +275,21 @@ SELECT
 FROM Shoe
 LEFT JOIN Diary
     ON Diary.ShoeID = Shoe.ShoeID
-WHERE Shoe.ShoeID > 0;
+WHERE Shoe.ShoeID > 0
+GROUP BY
+    Shoe.ShoeID,
+    ShoeName,
+    Brand,
+    StartDate,
+    DateRetired,
+    IsDefault
+ORDER BY
+    Shoe.ShoeID,
+    ShoeName,
+    Brand,
+    StartDate,
+    DateRetired,
+    IsDefault;
 """
 
 get_shoe_detail = """
