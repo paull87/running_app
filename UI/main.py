@@ -1,17 +1,14 @@
 
 from PyQt5.QtCore import *
-from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import sys, os, json, pyperclip, datetime
 from dateutil.relativedelta import relativedelta
 from settings.settings import Settings
 from VDOT.VDOT import VDOT
-from creator.creator import refresh_workouts
 import Calendar
 import MainMenu
 import Diary
 import ShoeList
-import ShoeDetail
 
 settings = Settings()
 
@@ -84,26 +81,7 @@ class DiaryWindow(QMainWindow, Diary.Ui_Diary):
         QMainWindow.__init__(self)
         self.setupUi(self)
         self.diary_id = None
-        self.DateDiary.setDate(QDate.currentDate())
         self.webView.setUrl(QUrl('https://www.strava.com/activities/1870360336'))
-        self.set_run_type_combo()
-        self.buttonSave.clicked.connect(self.save_diary)
-
-    def set_run_type_combo(self):
-        """Sets the values for the comboRunType."""
-        self.comboRunType.clear()
-        self.comboRunType.addItem('', 0)
-        for i, x in enumerate(settings.database.get_run_types()):
-            self.comboRunType.addItem(x[1], x[0])
-
-    def save_diary(self):
-        print(self.comboRunType.currentIndex(), str(self.comboRunType.currentText()), self.comboRunType.itemData(self.comboRunType.currentIndex()))
-        if self.complete_form():
-            self.diary_id = settings.add_diary()
-
-    def complete_form(self):
-        """Checks that the form has been completed before saving/editing."""
-        pass
 
 
 class ShoeListWindow(QMainWindow, ShoeList.Ui_ShoeList):
@@ -128,6 +106,7 @@ class Window(QMainWindow, MainMenu.Ui_RunningApp):
         self.calendar_window.show()
 
     def open_diary(self):
+        self.diary_window.reset_form()
         self.diary_window.show()
 
     def open_shoe_list(self):

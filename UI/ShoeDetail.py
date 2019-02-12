@@ -10,7 +10,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from settings.settings import Settings
 import datetime
 
-settings= Settings()
+settings = Settings()
 
 class Ui_ShoeDetail(object):
     def setupUi(self, ShoeDetail):

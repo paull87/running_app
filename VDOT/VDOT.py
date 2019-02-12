@@ -93,6 +93,8 @@ class VDOT:
 
     def save_vdot(self):
         """Saves the paces and vdot to the config for later use."""
+        self.save_race_paces()
+        self.save_training_paces()
         if self.vdot_score != self.current_vdot:
             self.db.update_vdot(str(self.vdot_score))
             self.save_race_paces()
@@ -130,9 +132,9 @@ if __name__ == '__main__':
 
     VDOT_values.calculate_vdot('HalfMarathon', '01:36:38')
     print('Current score:', VDOT_values.vdot_score)
-    settings.update_settings('MaxHR', 189)
-    settings.update_settings('Name', 'Paul Lucas')
-    settings.update_settings('DateOfBirth', datetime.datetime(year=1987, month=6, day=26))
+    #settings.update_settings('MaxHR', 189)
+    #settings.update_settings('Name', 'Paul Lucas')
+    #settings.update_settings('DateOfBirth', datetime.datetime(year=1987, month=6, day=26))
 
     print('\nTraining')
     for k, m, km in VDOT_values.training_paces:

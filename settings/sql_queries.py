@@ -256,7 +256,10 @@ SELECT
     ShoeName,
     IsDefault
 FROM Shoe
-WHERE DateRetired IS NULL;
+WHERE DateRetired IS NULL
+ORDER BY 
+    IsDefault DESC,
+    StartDate DESC;
 """
 
 get_shoe_list_complete = """
@@ -393,4 +396,5 @@ INNER JOIN Workout
 WHERE
 	PlannedSchedule.IsDeleted = 0
 	AND SchedulePlan.IsDeleted = 0
+	AND RaceDetailID IS NULL
 	AND SchedulePlan.ScheduleDate >= ?;"""

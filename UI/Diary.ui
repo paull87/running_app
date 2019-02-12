@@ -22,7 +22,7 @@
      <rect>
       <x>70</x>
       <y>200</y>
-      <width>69</width>
+      <width>131</width>
       <height>22</height>
      </rect>
     </property>
@@ -48,7 +48,7 @@
      <rect>
       <x>70</x>
       <y>160</y>
-      <width>111</width>
+      <width>201</width>
       <height>22</height>
      </rect>
     </property>
@@ -216,6 +216,9 @@
       <height>22</height>
      </rect>
     </property>
+    <property name="displayFormat">
+     <string>HH:mm:ss</string>
+    </property>
     <property name="calendarPopup">
      <bool>false</bool>
     </property>
@@ -233,7 +236,7 @@
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QWebView" name="webView">
+   <widget class="QWebView" name="webView" native="true">
     <property name="geometry">
      <rect>
       <x>410</x>
@@ -342,7 +345,7 @@ color: rgb(64, 64, 64);
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>
