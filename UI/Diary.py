@@ -8,10 +8,14 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
 from settings.settings import Settings
-from settings.converters import calculate_pace, calculate_speed, convert_distance, dec, time_to_string
+from settings.converters import calculate_pace, calculate_speed, convert_distance, dec, time_to_string, convert_weight
+from settings.strava import Strava
 import datetime
+import UI.stylesheets as stylesheets
+
 
 settings = Settings()
+strava = Strava()
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -40,6 +44,7 @@ class Ui_Diary(object):
         self.dateDiary.setGeometry(QtCore.QRect(50, 50, 120, 25))
         self.dateDiary.setCalendarPopup(True)
         self.dateDiary.setObjectName(_fromUtf8("DateDiary"))
+        self.dateDiary.dateChanged.connect(self.update_workout_and_race)
 
         self.timeDiary = QtWidgets.QTimeEdit(self.centralwidget)
         self.timeDiary.setGeometry(QtCore.QRect(175, 50, 60, 25))
@@ -115,20 +120,35 @@ class Ui_Diary(object):
         self.lineWeight.setGeometry(QtCore.QRect(50, 420, 70, 25))
         self.lineWeight.setObjectName(_fromUtf8("lineWeight"))
 
+        self.comboWeight = QtWidgets.QComboBox(self.centralwidget)
+        self.comboWeight.setGeometry(QtCore.QRect(120, 420, 60, 30))
+        self.comboWeight.setObjectName(_fromUtf8("comboWeight"))
+        for item in ['lb', 'kg']:
+            self.comboWeight.addItem(item)
+        self.comboWeight.currentIndexChanged.connect(self.weight_combo_change)
+
         self.lineRestingHR = QtWidgets.QLineEdit(self.centralwidget)
-        self.lineRestingHR.setGeometry(QtCore.QRect(130, 420, 70, 25))
+        self.lineRestingHR.setGeometry(QtCore.QRect(200, 420, 70, 25))
         self.lineRestingHR.setObjectName(_fromUtf8("lineRestingHR"))
 
+        self.comboRace = QtWidgets.QComboBox(self.centralwidget)
+        self.comboRace.setGeometry(QtCore.QRect(370, 50, 140, 30))
+        self.comboRace.setObjectName(_fromUtf8("comboRace"))
+
+        self.comboWorkout = QtWidgets.QComboBox(self.centralwidget)
+        self.comboWorkout.setGeometry(QtCore.QRect(370, 80, 140, 30))
+        self.comboWorkout.setObjectName(_fromUtf8("comboWorkout"))
+
         self.lineStravaID = QtWidgets.QLineEdit(self.centralwidget)
-        self.lineStravaID.setGeometry(QtCore.QRect(370, 50, 70, 25))
+        self.lineStravaID.setGeometry(QtCore.QRect(370, 130, 90, 25))
         self.lineStravaID.setObjectName(_fromUtf8("lineStravaID"))
 
         self.lineIntensityPointsHR = QtWidgets.QLineEdit(self.centralwidget)
-        self.lineIntensityPointsHR.setGeometry(QtCore.QRect(370, 80, 80, 25))
+        self.lineIntensityPointsHR.setGeometry(QtCore.QRect(370, 160, 80, 25))
         self.lineIntensityPointsHR.setObjectName(_fromUtf8("lineIntensityPointsHR"))
 
         self.lineIntensityPointsPace = QtWidgets.QLineEdit(self.centralwidget)
-        self.lineIntensityPointsPace.setGeometry(QtCore.QRect(470, 80, 80, 25))
+        self.lineIntensityPointsPace.setGeometry(QtCore.QRect(470, 160, 80, 25))
         self.lineIntensityPointsPace.setObjectName(_fromUtf8("lineIntensityPointsPace"))
 
         self.buttonSave = QtWidgets.QPushButton(self.centralwidget)
@@ -142,51 +162,7 @@ class Ui_Diary(object):
 
         self.calendarWidget = QtWidgets.QCalendarWidget(self.centralwidget)
         self.calendarWidget.setGeometry(QtCore.QRect(530, 390, 264, 155))
-        self.calendarWidget.setStyleSheet(_fromUtf8("QToolButton {\n"
-"height: 20px;\n"
-"width: 70px;\n"
-"color: white;\n"
-"font-size: 14px;\n"
-"icon-size: 20px, 20px;\n"
-"background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop: 0 #cccccc, stop: 1 #333333);\n"
-"}\n"
-"QMenu {\n"
-"width: 150px;\n"
-"left: 20px;\n"
-"color: white;\n"
-"font-size: 14px;\n"
-"background-color: rgb(100, 100, 100);\n"
-"}\n"
-"QSpinBox { \n"
-"width: 70px; \n"
-"font-size:14px; \n"
-"color: white;  \n"
-"background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop: 0 #cccccc, stop: 1 #333333);\n"
-"selection-background-color: transparent;\n"
-"selection-color: rgb(255, 255, 255);\n"
-"}\n"
-"QSpinBox::up-button { subcontrol-origin: border; subcontrol-position: top right; width:20px; }\n"
-"QSpinBox::down-button {subcontrol-origin: border; subcontrol-position: bottom right; width:20px;}\n"
-"QSpinBox::up-arrow { width:10px; height:20px; }\n"
-"QSpinBox::down-arrow { width:10px; height:20px; }\n"
-"QWidget { alternate-background-color: rgb(128, 128, 128); }\n"
-"QAbstractItemView:enabled \n"
-"{\n"
-"font-size:10px; \n"
-"color: rgb(180, 180, 180); \n"
-"background-color: black; \n"
-"selection-background-color: rgb(64, 64, 64); \n"
-"selection-color: rgb(0, 255, 0); \n"
-"}\n"
-"QWidget#qt_calendar_navigationbar\n"
-"{ \n"
-"background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop: 0 #cccccc, stop: 1 #333333); \n"
-"}\n"
-"\n"
-"QAbstractItemView:disabled \n"
-"{ \n"
-"color: rgb(64, 64, 64); \n"
-"}"))
+        self.calendarWidget.setStyleSheet(_fromUtf8(stylesheets.calendar_popup))
         self.calendarWidget.setGridVisible(False)
         self.calendarWidget.setVerticalHeaderFormat(QtWidgets.QCalendarWidget.NoVerticalHeader)
         self.calendarWidget.setNavigationBarVisible(True)
@@ -227,6 +203,8 @@ class Ui_Diary(object):
 
         self.lineDistance.textChanged.connect(self.calculate_fields)
         self.timeRunLength.timeChanged.connect(self.calculate_fields)
+        self.lineWeight.textChanged.connect(self.calculate_fields)
+        self.lineStravaID.textChanged.connect(self.strava_updates)
 
         QtCore.QMetaObject.connectSlotsByName(Diary)
 
@@ -237,6 +215,14 @@ class Ui_Diary(object):
             self.lineDistance.setText(str(dec(self.distance_miles, 2)))
         else:
             self.lineDistance.setText(str(dec(self.distance_km, 2)))
+
+    def weight_combo_change(self):
+        if self.weight_lb is None:
+            return
+        if self.comboWeight.currentText() == 'lb':
+            self.lineWeight.setText(str(dec(self.weight_lb, 2)))
+        else:
+            self.lineWeight.setText(str(dec(self.weight_kg, 2)))
 
     def pace_combo_change(self):
         if self.pace_miles is None:
@@ -273,7 +259,13 @@ class Ui_Diary(object):
             self.speed_miles = calculate_speed(self.distance_miles, self.run_length_time)
             self.speed_km = calculate_speed(self.distance_km, self.run_length_time)
             self.speed_combo_change()
-
+        if self.lineWeight.text() != '':
+            if self.comboWeight.currentText() == 'lb':
+                self.weight_lb = dec(self.lineWeight.text())
+                self.weight_kg = convert_weight(self.weight_lb, 'lb', 'kg')
+            else:
+                self.weight_kg = dec(self.lineWeight.text())
+                self.weight_lb = convert_weight(self.weight_kg, 'kg', 'lb')
 
     def reset_form(self):
         self.timeDiary.setTime(QtCore.QTime(0, 0))
@@ -299,6 +291,8 @@ class Ui_Diary(object):
         self.speed_km = None
         self.pace_miles = None
         self.pace_km = None
+        self.weight_kg = None
+        self.weight_lb = None
         self.run_length_time = datetime.timedelta(0)
 
     def set_run_type_combo(self):
@@ -315,10 +309,32 @@ class Ui_Diary(object):
         for shoe_id, shoe_name, _ in settings.database.get_shoe_list():
             self.comboShoe.addItem(shoe_name, shoe_id)
 
-    def save_diary(self):
-        print(self.convert_diary_entry())
-        if self.complete_form():
-            self.diary_id = settings.add_diary(self.convert_diary_entry())
+    def set_race_combo(self):
+        """Sets the values for the comboRace."""
+        start_date = datetime.datetime.combine(self.dateDiary.date().toPyDate(), datetime.datetime.min.time())
+        end_date = start_date + datetime.timedelta(days=1)
+        self.comboRace.clear()
+        self.comboRace.addItem('Race', 0)
+        races = [x for x in settings.database.get_calendar_range(start_date, end_date) if x[0] == 'Race']
+        for race in races:
+            self.comboRace.addItem(race[3], race[1])
+
+    def set_workout_combo(self):
+        """Sets the values for the comboWorkout."""
+        start_date = datetime.datetime.combine(self.dateDiary.date().toPyDate(), datetime.datetime.min.time())
+        end_date = start_date + datetime.timedelta(days=7)
+        start_date = start_date - datetime.timedelta(days=7)
+        self.comboWorkout.clear()
+        self.comboWorkout.addItem('Workout', 0)
+        workouts = [x for x in settings.database.get_calendar_range(start_date, end_date) if x[0] == 'Workout']
+        for workout in workouts:
+            self.comboWorkout.addItem(workout[3], workout[1])
+
+    def update_workout_and_race(self):
+        """Updates the workout and race combos in line with the date change."""
+        print('changed')
+        self.set_race_combo()
+        self.set_workout_combo()
 
     def convert_diary_entry(self):
          return (
@@ -326,18 +342,18 @@ class Ui_Diary(object):
              datetime.datetime.combine(self.dateDiary.date().toPyDate(), self.timeDiary.time().toPyTime()),
              self.run_length_time.total_seconds(),
              self.comboRunType.itemData(self.comboRunType.currentIndex()),
-             self.distance_miles,
-             self.distance_km,
-             self.speed_miles,
-             self.speed_km,
-             self.pace_miles,
-             self.pace_km,
+             str(self.distance_miles),
+             str(self.distance_km),
+             str(self.speed_miles),
+             str(self.speed_km),
+             str(self.pace_miles),
+             str(self.pace_km),
              self.lineAvgHR.text(),
              self.comboShoe.itemData(self.comboShoe.currentIndex()),
-             #self.comboSchedulePlanID,
+             self.comboWorkout.itemData(self.comboWorkout.currentIndex()),
              None if self.comboEffort.currentIndex() == 0 else self.comboEffort.currentText(),
              None if self.comboRating.currentIndex() == 0 else self.comboRating.currentText(),
-             #self.comboRace.currentText(),
+             self.comboRace.itemData(self.comboRace.currentIndex()),
              self.lineStravaID.text(),
              self.lineIntensityPointsHR.text(),
              self.lineIntensityPointsPace.text(),
@@ -358,6 +374,27 @@ class Ui_Diary(object):
                 and len(self.lineRestingHR.text()) > 0
                 )
 
+    def strava_updates(self):
+        if self.lineStravaID.text() == '':
+            return
+        self.webView.setUrl(QtCore.QUrl(f'https://www.strava.com/activities/{self.lineStravaID.text()}'))
+        self.calculate_intensity_points_hr()
+
+    def calculate_intensity_points_hr(self):
+        points = 0
+        try:
+            for lap in strava.get_laps(self.lineStravaID.text()):
+                points += settings.calculate_intensity_points(lap.average_heartrate, lap.elapsed_time)
+            self.lineIntensityPointsHR.setText(str(points))
+        except:
+            return
+
+
+    def save_diary(self):
+        print(self.convert_diary_entry())
+        if self.complete_form():
+            self.diary_id = settings.database.add_diary_entry(self.convert_diary_entry())
+
     def retranslateUi(self, Diary):
         Diary.setWindowTitle(_translate("Diary", "MainWindow", None))
         self.lineDistance.setPlaceholderText(_translate("Diary", "Distance", None))
@@ -377,6 +414,8 @@ class Ui_Diary(object):
         self.lineStravaID.setPlaceholderText(_translate("Diary", "StravaID", None))
         self.lineIntensityPointsHR.setPlaceholderText(_translate("Diary", "HR Intensity", None))
         self.lineIntensityPointsPace.setPlaceholderText(_translate("Diary", "Pace Intensity", None))
+
+
 
 import resources_rc
 

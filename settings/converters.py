@@ -15,6 +15,9 @@ miles_in_metre = dec('0.0006213712')
 miles_in_km = dec('0.6213712')
 km_in_mile = dec('1.609344')
 
+kg_in_lb = dec('0.45359237')
+lb_in_kg = dec('2.2046226218')
+
 converter_dict = {
     'metre-mile': miles_in_metre,
     'mile-metre': metres_in_mile,
@@ -22,6 +25,11 @@ converter_dict = {
     'metre-km': dec('0.001'),
     'km-mile': miles_in_km,
     'mile-km': km_in_mile
+}
+
+weight_converter_dict = {
+    'kg-lb': lb_in_kg,
+    'lb-kg': kg_in_lb
 }
 
 
@@ -78,6 +86,10 @@ def determine_distance_type(dis_from, dis_to):
     """Returns the conversion number between the two distance types."""
     return converter_dict['{}-{}'.format(dis_from, dis_to)]
 
+def determine_weight_type(from_unit, to_unit):
+    """Returns the conversion number between the two weight units."""
+    return weight_converter_dict['{}-{}'.format(from_unit, to_unit)]
+
 
 def time_to_string(time, fmt):
     """Converts timedelta to the given format."""
@@ -91,6 +103,10 @@ def calculate_speed(distance, time):
     hours = dec(time.total_seconds() / 3600)
     return dec(distance / hours, 2)
 
+
+def convert_weight(weight, from_unit, to_unit):
+    """Converts given to from one unit to the other."""
+    return dec(dec(weight) * determine_weight_type(from_unit, to_unit))
 
 if __name__ == '__main__':
     print('Mile Conversions')

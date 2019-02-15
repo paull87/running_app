@@ -163,6 +163,7 @@ class DB:
         """Adds or amends a diary entry."""
         cursor = self.connection.cursor()
         if diary_entry[0] is None:
+            print(diary_entry[1:])
             cursor.execute(sql_queries.add_diary_entry, diary_entry[1:])
         else:
             cursor.execute(sql_queries.edit_diary_entry, tuple(diary_entry[1:]) + (diary_entry[0],))
