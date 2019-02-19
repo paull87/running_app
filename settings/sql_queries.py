@@ -322,8 +322,8 @@ WHERE PlannedScheduleID = ?;"""
 
 add_diary_entry = """
 INSERT INTO Diary(DiaryDate,RunTime,RunTypeID,DistanceMiles,DistanceKM,SpeedMPH,SpeedKPH,PaceMiles,PaceKM,AverageHR,
-    ShoeID,SchedulePlanID,Effort,RunRating,RaceDetailID,StravaID,IntensityPointsHR,IntensityPointsPace,IsDeleted)
-VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+    ShoeID,SchedulePlanID,Effort,RunRating,RaceDetailID,StravaID,IntensityPointsHR,IntensityPointsPace,Description,IsDeleted)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 edit_diary_entry = """
 UPDATE Diary
@@ -346,9 +346,38 @@ SET
     StravaID = ?,
     IntensityPointsHR = ?,
     IntensityPointsPace = ?,
+    Description = ?,
     IsDeleted = ?
 WHERE
     DiaryID = ?;"""
+
+get_diary_entry = """
+SELECT 
+    DiaryID,
+    DiaryDate,
+    RunTime,
+    RunTypeID,
+    DistanceMiles,
+    DistanceKM,
+    SpeedMPH,
+    SpeedKPH,
+    PaceMiles,
+    PaceKM,
+    AverageHR,
+    ShoeID,
+    SchedulePlanID,
+    Effort,
+    RunRating,
+    RaceDetailID,
+    StravaID,
+    IntensityPointsHR,
+    IntensityPointsPace,
+    Description,
+    IsDeleted
+FROM Diary
+WHERE
+    DiaryID = ?;
+"""
 
 get_run_types = """
 SELECT RunTypeID, Name
@@ -398,3 +427,12 @@ WHERE
 	AND SchedulePlan.IsDeleted = 0
 	AND RaceDetailID IS NULL
 	AND SchedulePlan.ScheduleDate >= ?;"""
+
+get_health_stats = """
+SELECT Date, WeightKG, WeightLB, RestingHR
+FROM HealthStats
+WHERE Date = ?;"""
+
+add_health_stats = """
+INSERT OR REPLACE INTO HealthStats(Date, WeightKG, WeightLB, RestingHR)
+VALUES(?, ?, ?, ?);"""

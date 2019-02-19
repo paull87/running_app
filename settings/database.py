@@ -163,13 +163,16 @@ class DB:
         """Adds or amends a diary entry."""
         cursor = self.connection.cursor()
         if diary_entry[0] is None:
-            print(diary_entry[1:])
             cursor.execute(sql_queries.add_diary_entry, diary_entry[1:])
         else:
             cursor.execute(sql_queries.edit_diary_entry, tuple(diary_entry[1:]) + (diary_entry[0],))
         diary_id = cursor.lastrowid
         self.connection.commit()
         return diary_id
+
+    def get_diary_entry(self, diary_id):
+        """Returns the details of the given diary_id."""
+        return self.connection.cursor().execute(sql_queries.get_diary_entry, (diary_id,)).fetchone()
 
     def get_run_types(self):
         return self.connection.cursor().execute(sql_queries.get_run_types).fetchall()
@@ -183,6 +186,15 @@ class DB:
         """Returns all scheduled workouts after a given date."""
         return named_tuple_result('ScheduledWorkouts', self.connection.execute(
             sql_queries.get_scheduled_workout_details, (start_date,)))
+
+    def add_health_stats(self, stats):
+        """Adds or amends the given health stats to the database."""
+        cursor = self.connection.cursor()
+        cursor.execute(sql_queries.add_health_stats, stats)
+        self.connection.commit()
+
+    def get_health_stats(self, stats_date):
+        return self.connection.cursor().execute(sql_queries.get_health_stats, (stats_date,)).fetchone()
 
 
 def named_tuple_result(name, results):

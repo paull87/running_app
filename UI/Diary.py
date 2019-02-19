@@ -295,6 +295,10 @@ class Ui_Diary(object):
         self.weight_lb = None
         self.run_length_time = datetime.timedelta(0)
 
+    def get_diary_details(self, diary_id):
+        self.diary_id = diary_id
+        diary = settings.database.get_diary_entry(diary_id)
+
     def set_run_type_combo(self):
         """Sets the values for the comboRunType."""
         self.comboRunType.clear()
@@ -332,7 +336,6 @@ class Ui_Diary(object):
 
     def update_workout_and_race(self):
         """Updates the workout and race combos in line with the date change."""
-        print('changed')
         self.set_race_combo()
         self.set_workout_combo()
 
@@ -357,8 +360,17 @@ class Ui_Diary(object):
              self.lineStravaID.text(),
              self.lineIntensityPointsHR.text(),
              self.lineIntensityPointsPace.text(),
+             self.lineNotes.text(),
              False
          )
+
+    def convert_health_stats(self):
+        return (
+            datetime.datetime.combine(self.dateDiary.date().toPyDate(), datetime.datetime.min.time()),
+            str(self.weight_kg),
+            str(self.weight_lb),
+            self.lineRestingHR.text()
+        )
 
     def complete_form(self):
         """Checks that the form has been completed before saving/editing."""
@@ -389,11 +401,11 @@ class Ui_Diary(object):
         except:
             return
 
-
     def save_diary(self):
-        print(self.convert_diary_entry())
         if self.complete_form():
             self.diary_id = settings.database.add_diary_entry(self.convert_diary_entry())
+        if self.complete_weight_form():
+            settings.database.add_health_stats(self.convert_health_stats())
 
     def retranslateUi(self, Diary):
         Diary.setWindowTitle(_translate("Diary", "MainWindow", None))
@@ -415,11 +427,6 @@ class Ui_Diary(object):
         self.lineIntensityPointsHR.setPlaceholderText(_translate("Diary", "HR Intensity", None))
         self.lineIntensityPointsPace.setPlaceholderText(_translate("Diary", "Pace Intensity", None))
 
-
-
-import resources_rc
-
-#from PyQt5 import QtWebKit
 
 if __name__ == "__main__":
     import sys
