@@ -63,6 +63,10 @@ class Strava:
             distance = str(lap.distance).split()[0]
             lap.distance_miles = dec(convert_distance(dec(distance), 'metre', 'mile'))
             lap.distance_km = dec(convert_distance(dec(distance), 'metre', 'km'))
+            lap.pace_mile = calculate_pace(lap.moving_time, lap.distance_miles, 'mile')
+            lap.pace_km = calculate_pace(lap.moving_time, lap.distance_km, 'km')
+            lap.speed_mile = calculate_speed(lap.distance_miles, lap.moving_time)
+            lap.speed_km = calculate_speed(lap.distance_km, lap.moving_time)
             yield lap
 
     @_increase_calls

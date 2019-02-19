@@ -252,12 +252,62 @@ ORDER BY
 
 get_shoe_list = """
 SELECT
-    ShoeID,
+    Shoe.ShoeID,
     ShoeName,
     IsDefault
 FROM Shoe
-WHERE
-    DateRetired IS NULL;
+WHERE DateRetired IS NULL
+ORDER BY 
+    IsDefault DESC,
+    StartDate DESC;
+"""
+
+get_shoe_list_complete = """
+SELECT
+    Shoe.ShoeID,
+    ShoeName,
+    Brand,
+    StartDate,
+    DateRetired,
+    COALESCE(SUM(DistanceMiles), 0.0) AS MilesRun,
+    COALESCE(SUM(DistanceKM), 0.0) AS KMRun,
+    COALESCE(SUM(RunTime), 0.0) AS TimeRunning,
+    COALESCE(MAX(DistanceMiles), 0.0) AS LongestRunMile,
+    COALESCE(MAX(DistanceKM), 0.0) AS LongestRunKM,
+    IsDefault
+FROM Shoe
+LEFT JOIN Diary
+    ON Diary.ShoeID = Shoe.ShoeID
+WHERE Shoe.ShoeID > 0
+GROUP BY
+    Shoe.ShoeID,
+    ShoeName,
+    Brand,
+    StartDate,
+    DateRetired,
+    IsDefault
+ORDER BY
+    Shoe.ShoeID,
+    ShoeName,
+    Brand,
+    StartDate,
+    DateRetired,
+    IsDefault;
+"""
+
+get_shoe_detail = """
+SELECT
+    ShoeID,
+    ShoeName,
+    Brand,
+    Description,
+    StartDate,
+    DateRetired,
+    PreviousMiles,
+    PreviousKM,
+    isDefault
+FROM Shoe
+WHERE ShoeID = ?;
 """
 
 delete_schedule_plan_workouts = """
@@ -272,8 +322,8 @@ WHERE PlannedScheduleID = ?;"""
 
 add_diary_entry = """
 INSERT INTO Diary(DiaryDate,RunTime,RunTypeID,DistanceMiles,DistanceKM,SpeedMPH,SpeedKPH,PaceMiles,PaceKM,AverageHR,
-    ShoeID,SchedulePlanID,Effort,RunRating,RaceDetailID,StravaID,IntensityPointsHR,IntensityPointsPace,IsDeleted)
-VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+    ShoeID,SchedulePlanID,Effort,RunRating,RaceDetailID,StravaID,IntensityPointsHR,IntensityPointsPace,Description,IsDeleted)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);"""
 
 edit_diary_entry = """
 UPDATE Diary
@@ -296,9 +346,38 @@ SET
     StravaID = ?,
     IntensityPointsHR = ?,
     IntensityPointsPace = ?,
+    Description = ?,
     IsDeleted = ?
 WHERE
     DiaryID = ?;"""
+
+get_diary_entry = """
+SELECT 
+    DiaryID,
+    DiaryDate,
+    RunTime,
+    RunTypeID,
+    DistanceMiles,
+    DistanceKM,
+    SpeedMPH,
+    SpeedKPH,
+    PaceMiles,
+    PaceKM,
+    AverageHR,
+    ShoeID,
+    SchedulePlanID,
+    Effort,
+    RunRating,
+    RaceDetailID,
+    StravaID,
+    IntensityPointsHR,
+    IntensityPointsPace,
+    Description,
+    IsDeleted
+FROM Diary
+WHERE
+    DiaryID = ?;
+"""
 
 get_run_types = """
 SELECT RunTypeID, Name
@@ -346,4 +425,14 @@ INNER JOIN Workout
 WHERE
 	PlannedSchedule.IsDeleted = 0
 	AND SchedulePlan.IsDeleted = 0
+	AND RaceDetailID IS NULL
 	AND SchedulePlan.ScheduleDate >= ?;"""
+
+get_health_stats = """
+SELECT Date, WeightKG, WeightLB, RestingHR
+FROM HealthStats
+WHERE Date = ?;"""
+
+add_health_stats = """
+INSERT OR REPLACE INTO HealthStats(Date, WeightKG, WeightLB, RestingHR)
+VALUES(?, ?, ?, ?);"""

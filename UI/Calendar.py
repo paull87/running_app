@@ -88,14 +88,14 @@ class CustomList(QtWidgets.QListWidget):
         mimeData = self.model().mimeData(self.selectedIndexes())
         drag.setMimeData(mimeData)
 
-        if drag.start(QtCore.Qt.MoveAction) == QtCore.Qt.MoveAction:
+        if drag.exec_(QtCore.Qt.MoveAction) == QtCore.Qt.MoveAction:
             for item in self.selectedItems():
                 self.takeItem(self.row(item))
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.ignore()
-        elif event.source().currentItem().item_type != 'Workout': # Only allow Workouts to be moved
+        elif event.source().currentItem().item_type != 'Workout':  # Only allow Workouts to be moved
             event.ignore()
         else:
             event.accept()
@@ -154,7 +154,7 @@ class Ui_MainWindow(object):
             self.horizontalLayout.addWidget(self.labeldays[day])
 
         self.comboMonth = QtWidgets.QComboBox(self.centralwidget)
-        self.comboMonth.setGeometry(QtCore.QRect(580, 100, 69, 22))
+        self.comboMonth.setGeometry(QtCore.QRect(580, 105, 100, 25))
         self.comboMonth.setObjectName(_fromUtf8("comboMonth"))
         for i, month in enumerate(months):
             self.comboMonth.addItem(_fromUtf8(""))
@@ -162,7 +162,7 @@ class Ui_MainWindow(object):
         self.comboMonth.setCurrentIndex(self.current_date.month - 1)
 
         self.comboYear = QtWidgets.QComboBox(self.centralwidget)
-        self.comboYear.setGeometry(QtCore.QRect(650, 100, 69, 22))
+        self.comboYear.setGeometry(QtCore.QRect(685, 105, 80, 25))
         self.comboYear.setObjectName(_fromUtf8("comboYear"))
 
         for i, year in enumerate(years):
@@ -172,11 +172,11 @@ class Ui_MainWindow(object):
         self.comboYear.setCurrentIndex(year_index)
 
         self.pushNextMonth = QtWidgets.QPushButton(self.centralwidget)
-        self.pushNextMonth.setGeometry(QtCore.QRect(720, 100, 51, 22))
+        self.pushNextMonth.setGeometry(QtCore.QRect(770, 100, 60, 25))
         self.pushNextMonth.setObjectName(_fromUtf8("pushNextMonth"))
         self.pushNextMonth.setText(_translate("MainWindow", "Next", None))
         self.pushPrevMonth = QtWidgets.QPushButton(self.centralwidget)
-        self.pushPrevMonth.setGeometry(QtCore.QRect(530, 100, 51, 22))
+        self.pushPrevMonth.setGeometry(QtCore.QRect(515, 100, 60, 25))
         self.pushPrevMonth.setObjectName(_fromUtf8("pushPrevMonth"))
         self.pushPrevMonth.setText(_translate("MainWindow", "Prev", None))
         self.comboMonth.count()
@@ -260,7 +260,8 @@ class Ui_MainWindow(object):
 
     def add_calendar_items(self, day):
         """Adds calendar items to the day view."""
-        for i, item in enumerate([x for x in self.calendar if x[2] == datetime.datetime.strptime(day, '%Y%m%d')]):
+        for i, item in enumerate([x for x in self.calendar if x[2].replace(hour=0, minute=0, second=0) == datetime.datetime.strptime(day, '%Y%m%d')]):
+            print(item)
             item_name = '{0}\n{3}'.format(*item)
             list_item = '{0}_{1}'.format(*item)
             self.calendar_items[list_item] = CustomListItem()

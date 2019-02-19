@@ -131,6 +131,15 @@ class DB:
         """Returns all available shoes."""
         return self.connection.cursor().execute(sql_queries.get_shoe_list).fetchall()
 
+    def get_shoe_detail(self, shoe_id):
+        """Returns the details of the given shoe id."""
+        return named_tuple_result('ShoeDetail', self.connection.execute(
+            sql_queries.get_shoe_detail, (shoe_id,)))[0]
+
+    def get_shoe_list_detail(self):
+        """Returns all available shoes and their details."""
+        return [x for x in self.connection.cursor().execute(sql_queries.get_shoe_list_complete).fetchall()]
+
     def delete_workout_plan(self, plan_id):
         """Deletes the given plan ID."""
         self.connection.execute(sql_queries.delete_schedule_plan_workouts, (plan_id,))
@@ -161,6 +170,10 @@ class DB:
         self.connection.commit()
         return diary_id
 
+    def get_diary_entry(self, diary_id):
+        """Returns the details of the given diary_id."""
+        return self.connection.cursor().execute(sql_queries.get_diary_entry, (diary_id,)).fetchone()
+
     def get_run_types(self):
         return self.connection.cursor().execute(sql_queries.get_run_types).fetchall()
 
@@ -173,6 +186,15 @@ class DB:
         """Returns all scheduled workouts after a given date."""
         return named_tuple_result('ScheduledWorkouts', self.connection.execute(
             sql_queries.get_scheduled_workout_details, (start_date,)))
+
+    def add_health_stats(self, stats):
+        """Adds or amends the given health stats to the database."""
+        cursor = self.connection.cursor()
+        cursor.execute(sql_queries.add_health_stats, stats)
+        self.connection.commit()
+
+    def get_health_stats(self, stats_date):
+        return self.connection.cursor().execute(sql_queries.get_health_stats, (stats_date,)).fetchone()
 
 
 def named_tuple_result(name, results):

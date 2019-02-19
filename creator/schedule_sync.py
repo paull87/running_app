@@ -91,3 +91,11 @@ def schedule_step(serial, workout, schedule_date):
     schedule = 'Data,0,schedule,manufacturer,"1",,garmin_product,"65534",,serial_number,"{}",,' \
                'time_created,"{}",,type,"0",,scheduled_time,"{}",,completed,"0",,\n'
     return schedule.format(serial, workout, schedule_date)
+
+
+if __name__ == '__main__':
+
+    settings = Settings()
+
+    sync = WorkoutSync(settings)
+    sync.create_schedule()

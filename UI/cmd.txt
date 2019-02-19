@@ -1,4 +1,11 @@
 C:\Users\paul.lucas\AppData\Local\Programs\Python\Python35-32\Lib\site-packages\PyQt4>pyrcc4 -o "C:\PythonScripts\FitnessApp\UI\resources_rc.py" "C:\PythonScripts\FitnessApp\UI\resources.qrc" -py3
 
 
+/Users/paullucas/venv/FitnessApp/bin/python
+source activate
+
+cd
+PyQt5>pyuic5 -x "C:\PythonScripts\UI\Diary.ui" -o "C:\PythonScripts\FitnessApp\UI\Diary.py"
+
+
 C:\Users\paul.lucas\AppData\Local\Programs\Python\Python35-32\Lib\site-packages\PyQt4>pyuic4 -x "C:\PythonScripts\FitnessApp\UI\Diary.ui" -o "C:\PythonScripts\FitnessApp\UI\Diary.py"

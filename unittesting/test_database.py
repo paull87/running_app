@@ -181,9 +181,30 @@ def test_delete_plan(database):
 def test_add_diary_entry(database):
     diary_entry = [None, start_date + datetime.timedelta(hours=7, minutes=45),
                    datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600, 500,
-                   152, None, None, 4, 3, None, None, 2.54, 2.54, 0]
+                   152, None, None, 4, 3, None, None, 2.54, 2.54, "Test Description", 0]
     database.add_diary_entry(diary_entry)
     assert len(database.get_calendar_range(start_date, end_date)) == 1
+
+
+def test_get_diary_entry(database):
+    diary_entry = [None, start_date + datetime.timedelta(hours=7, minutes=45),
+                   datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600, 500,
+                   152, None, None, 4, 3, None, None, 2.54, 2.54, "Test Description", 0]
+    diary_id = database.add_diary_entry(diary_entry)
+    diary_entry[0] = diary_id
+    assert database.get_diary_entry(diary_id) == tuple(diary_entry)
+
+
+def test_amend_diary_entry(database):
+    diary_entry = [None, start_date + datetime.timedelta(hours=7, minutes=45),
+                   datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600, 500,
+                   152, None, None, 4, 3, None, None, 2.54, 2.54, "Test Description", 0]
+    diary_id = database.add_diary_entry(diary_entry)
+    new_diary_entry = [diary_id, start_date + datetime.timedelta(hours=9, minutes=57),
+                   datetime.timedelta(hours=0, minutes=34, seconds=1).total_seconds(), 3, 99, 11, 5.3, 8.7, 888, 444,
+                   176, None, None, 1, 5, None, None, 7.54, 7.54, "Test Change Description", 0]
+    database.add_diary_entry(new_diary_entry)
+    assert database.get_diary_entry(diary_id) == tuple(new_diary_entry)
 
 
 def test_get_run_types(database):
@@ -211,7 +232,7 @@ def test_get_shoe_list(database):
 def test_add_shoe(database):
     assert database.add_amend_shoe((None, 'TestShoe', 'TestBrand', 'TestDes', datetime.datetime(2018, 11, 1), None, 0,
                                     0, 1)) == 1
-    assert database.get_shoe_list() == [(0, 'Unknown', 0), (1, 'TestShoe', 1)]
+    assert database.get_shoe_list() == [(1, 'TestShoe', 1), (0, 'Unknown', 0)]
 
 
 def test_amend_shoe(database):
@@ -225,3 +246,34 @@ def test_get_scheduled_workout_details(database):
     schedule_workouts(database)
     fields = database.get_scheduled_workout_details(datetime.datetime(2018, 1, 1))[0]._fields
     assert fields == ('Name', 'WorkoutJSON', 'FileName', 'SerialNumber', 'ScheduleDate')
+
+
+def test_get_shoe_list_detail_no_shoes(database):
+    assert database.get_shoe_list_detail() == list()
+
+
+def test_get_shoe_list_detail_single_shoe(database):
+    database.add_amend_shoe((None, 'TestShoe', 'TestBrand', 'TestDes', datetime.datetime(2018, 11, 1), None, 0, 0, 1))
+    assert database.get_shoe_list_detail() == [(1, 'TestShoe', 'TestBrand', datetime.datetime(2018, 11, 1), None,
+                                               0, 0, 0, 0, 0, 1)]
+
+
+def test_get_shoe_detail_fields(database):
+    database.add_amend_shoe((None, 'TestShoe', 'TestBrand', 'TestDes', datetime.datetime(2018, 11, 1), None, 0, 0, 1))
+    assert database.get_shoe_detail(1)._fields == ('ShoeID', 'ShoeName', 'Brand', 'Description', 'StartDate', 'DateRetired',
+                                                  'PreviousMiles', 'PreviousKM', 'IsDefault')
+
+
+def test_add_health_stats(database):
+    health_stats = (start_date, 10, 5, 50)
+    database.add_health_stats(health_stats)
+    assert database.get_health_stats(start_date) == health_stats
+
+
+def test_amend_health_stats(database):
+    health_stats = (start_date, 10, 5, 50)
+    database.add_health_stats(health_stats)
+    assert database.get_health_stats(start_date) == health_stats
+    new_health_stats = (start_date, 99, 88, 77)
+    database.add_health_stats(new_health_stats)
+    assert database.get_health_stats(start_date) == new_health_stats

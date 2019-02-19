@@ -178,3 +178,11 @@ def test_time_to_string_ss():
 
 def test_calculate_speed():
     assert calculate_speed(5, datetime.timedelta(minutes=48, seconds=10)) == dec('6.23')
+
+
+def test_convert_weight_kg_lb():
+    assert convert_weight(5, 'kg', 'lb') == dec('11.023113109')
+
+
+def test_convert_weight_lb_kg():
+    assert convert_weight(5, 'lb', 'kg') == dec('2.26796185')
