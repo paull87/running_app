@@ -436,3 +436,14 @@ WHERE Date = ?;"""
 add_health_stats = """
 INSERT OR REPLACE INTO HealthStats(Date, WeightKG, WeightLB, RestingHR)
 VALUES(?, ?, ?, ?);"""
+
+add_strava_lap = """
+INSERT OR REPLACE INTO StravaLap(LapID, StravaID, LapStartDate, LapTime, DistanceMiles, DistanceKM, SpeedMPH, SpeedKPH, PaceMiles, PaceKM, AverageHR, IntensityPointsHR, IntensityPointsPace)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?);"""
+
+get_strava_lap = """
+SELECT LapID, StravaID, LapStartDate, LapTime, DistanceMiles, DistanceKM, SpeedMPH, SpeedKPH, PaceMiles, PaceKM, AverageHR, IntensityPointsHR, IntensityPointsPace
+FROM StravaLap
+WHERE StravaID = ?
+ORDER BY LapStartDate, LapID;
+"""

@@ -277,3 +277,19 @@ def test_amend_health_stats(database):
     new_health_stats = (start_date, 99, 88, 77)
     database.add_health_stats(new_health_stats)
     assert database.get_health_stats(start_date) == new_health_stats
+
+
+def test_add_strava_laps(database):
+    lap = (12345, 54321, start_date, 300, 3.1, 5, 10.5, 20.5, 100, 200, 150, 99.99, 77.77)
+    database.add_strava_lap(lap)
+    assert database.get_strava_laps(54321) == [lap, ]
+
+
+def test_amend_strava_lap(database):
+    lap = (12345, 54321, start_date, 300, 3.1, 5, 10.5, 20.5, 100, 200, 150, 99.99, 77.77)
+    database.add_strava_lap(lap)
+    assert database.get_strava_laps(54321) == [lap,]
+    new_lap = (12345, 54321, start_date, 999, 6, 9.7, 5.5, 34.5, 699, 400, 150, 99.99, 67.77)
+    database.add_strava_lap(new_lap)
+    assert database.get_strava_laps(54321) == [new_lap, ]
+
