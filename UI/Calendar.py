@@ -78,7 +78,21 @@ class CustomListItem(QtWidgets.QListWidgetItem):
 class CustomList(QtWidgets.QListWidget):
     def __init__(self, *args):
         QtWidgets.QListWidget.__init__(self, *args)
+        self.timer = QtCore.QTimer()
+        self.timer.setSingleShot(True)
         self.itemClicked.connect(self.item_click)
+        #self.timer.timeout.connect(self.item_click)
+        super().clicked.connect(self.checkDoubleClick)
+
+    @QtCore.pyqtSlot()
+    def checkDoubleClick(self):
+        if self.timer.isActive():
+            self.timer.stop()
+            print('double')
+            self.doubleClicked.emit(QtCore.QModelIndex())
+        else:
+            self.timer.start(250)
+            print('single')
 
     def item_click(self, item):
         return (item.item_type, item.item_id)
@@ -130,6 +144,8 @@ class Ui_MainWindow(object):
         self.layouts = dict()
         self.calendar = None
         self.calendar_items = dict()
+        self.diary_window = None
+        self.current_item = None
 
         self.current_date = datetime.date.today()
 
@@ -201,6 +217,9 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+    def set_diary_window(self, window):
+        self.diary_window = window
+
     def clear_calendar(self):
         for layout in self.layouts.values():
             while layout.count():
@@ -252,11 +271,12 @@ class Ui_MainWindow(object):
         self.lists[day].setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.lists[day].setDefaultDropAction(QtCore.Qt.MoveAction)
         self.lists[day].itemClicked.connect(self.PrintClick)
+        #self.lists[day].clicked.connect(self.PrintClick)
+        self.lists[day].doubleClicked.connect(self.show_diary_window)
         if not current:
             self.lists[day].setEnabled(False)
         else:
             self.add_calendar_items(day)
-
 
     def add_calendar_items(self, day):
         """Adds calendar items to the day view."""
@@ -293,6 +313,13 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "Calendar", None))
+
+    def show_diary_window(self):
+        if not self.current_item:
+            return
+        if self.current_item[0] == 'Diary':
+            self.diary_window.get_diary_details(self.current_item[1])
+            self.diary_window.show()
 
     def PrintClick(self, item):
         pass

@@ -159,6 +159,22 @@ FOREIGN KEY(SchedulePlanID) REFERENCES SchedulePlan(SchedulePlanID),
 FOREIGN KEY(ShoeID) REFERENCES Shoe(ShoeID),
 FOREIGN KEY(RaceDetailID) REFERENCES RaceDetail(RaceDetailID));
 
+CREATE TABLE IF NOT EXISTS StravaLap (
+LapID INTEGER PRIMARY KEY,
+StravaID INT NOT NULL,
+LapStartDate TIMESTAMP NOT NULL,
+LapTime INT NOT NULL,
+DistanceMiles REAL,
+DistanceKM REAL,
+SpeedMPH REAL,
+SpeedKPH REAL,
+PaceMiles INT,
+PaceKM INT,
+AverageHR INT,
+IntensityPointsHR REAL,
+IntensityPointsPace REAL
+);
+
 CREATE TABLE IF NOT EXISTS VDOTPaces (
 VDOT INT,
 Unit INT,
@@ -228,7 +244,7 @@ SELECT
     'Diary' AS ItemType,
     DiaryID AS ItemID,
     DiaryDate AS ItemDate,
-    RunType.Name AS ItemName,
+    RunType.Name || ' ' || Diary.DistanceMiles AS ItemName,
     NULL AS GoalTime,
     NULL AS ActualTime
 FROM Diary

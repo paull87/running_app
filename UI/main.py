@@ -20,7 +20,7 @@ class CalendarWindow(QMainWindow, Calendar.Ui_MainWindow):
         self._current_month = self.current_date.month
         self._current_year = self.current_date.year
         self.generate_calendar(self._current_month, self._current_year)
-
+        self.current_item = None
         self.comboMonth.currentIndexChanged.connect(
             self.combo_change_calendar)
         self.comboYear.currentIndexChanged.connect(
@@ -29,8 +29,7 @@ class CalendarWindow(QMainWindow, Calendar.Ui_MainWindow):
         self.pushPrevMonth.clicked.connect(self.prev_month)
 
     def PrintClick(self, item):
-        print('override')
-        print(item.item_type, item.item_id)
+        self.current_item = (item.item_type, item.item_id)
 
     def combo_change_calendar(self):
         """On change of the combo boxes, the calendar is regenerated."""
@@ -96,6 +95,7 @@ class Window(QMainWindow, MainMenu.Ui_RunningApp):
         self.setupUi(self)
         self.calendar_window = CalendarWindow()
         self.diary_window = DiaryWindow()
+        self.calendar_window.set_diary_window(self.diary_window)
         self.shoe_window = ShoeListWindow()
         # Set action for clicking browse button
         self.buttonCalendar.clicked.connect(self.open_calendar)

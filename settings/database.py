@@ -196,6 +196,16 @@ class DB:
     def get_health_stats(self, stats_date):
         return self.connection.cursor().execute(sql_queries.get_health_stats, (stats_date,)).fetchone()
 
+    def add_strava_lap(self, lap):
+        """Adds or amends the given strava lap to the database."""
+        cursor = self.connection.cursor()
+        cursor.execute(sql_queries.add_strava_lap, lap)
+        self.connection.commit()
+
+    def get_strava_laps(self, strava_id):
+        """Returns a list of laps for a given strava_id"""
+        return self.connection.cursor().execute(sql_queries.get_strava_lap, (strava_id,)).fetchall()
+
 
 def named_tuple_result(name, results):
     """Creates a named tuple result set for the given results."""

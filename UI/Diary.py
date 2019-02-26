@@ -7,11 +7,28 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
+import pyqtgraph
 from settings.settings import Settings
 from settings.converters import calculate_pace, calculate_speed, convert_distance, dec, time_to_string, convert_weight
 from settings.strava import Strava
 import datetime
 import UI.stylesheets as stylesheets
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib import cm
+import seaborn
+import matplotlib
+import pandas
+import numpy
+
+matplotlib.use('QT5Agg')
+seaborn.set()
+seaborn.set_style('white', {
+    'axes.spines.bottom': False,
+    'axes.spines.left': False,
+    'axes.spines.right': False,
+    'axes.spines.top': False,})
+#seaborn.despine(top=True, right=True, left=True, bottom=True)
 
 
 settings = Settings()
@@ -31,11 +48,30 @@ except AttributeError:
     def _translate(context, text, disambig):
         return QtWidgets.QApplication.translate(context, text, disambig)
 
+
+class PlotCanvas(FigureCanvas):
+    def __init__(self):
+        self.fig = Figure()
+        self.ax = self.fig.add_subplot(111)
+        FigureCanvas.__init__(self, self.fig)
+        FigureCanvas.setSizePolicy(self, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+
+class PlotWidget(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)   # Inherit from QWidget
+        self.canvas = PlotCanvas()                  # Create canvas object
+        self.vbl = QtWidgets.QVBoxLayout()         # Set box for plotting
+        self.vbl.addWidget(self.canvas)
+        self.setLayout(self.vbl)
+
 class Ui_Diary(object):
     def setupUi(self, Diary):
         Diary.setObjectName(_fromUtf8("Diary"))
         Diary.resize(800, 600)
         Diary.setStyleSheet(_fromUtf8(""))
+        Diary.setWindowModality(QtCore.Qt.ApplicationModal)
         self.diary_id = None
         self.centralwidget = QtWidgets.QWidget(Diary)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
@@ -158,6 +194,7 @@ class Ui_Diary(object):
 
         self.webView = QtWebEngineWidgets.QWebEngineView(self.centralwidget)
         self.webView.setGeometry(QtCore.QRect(370, 200, 380, 300))
+        self.webView.setGeometry(QtCore.QRect(1370, 1200, 380, 300))
         self.webView.setObjectName(_fromUtf8("webView"))
 
         self.calendarWidget = QtWidgets.QCalendarWidget(self.centralwidget)
@@ -177,6 +214,9 @@ class Ui_Diary(object):
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
         Diary.setStatusBar(self.statusbar)
         self.dateDiary.setCalendarWidget(self.calendarWidget)
+
+        self.canvasWidget = PlotWidget(self.centralwidget)
+        self.canvasWidget.setGeometry(QtCore.QRect(370, 200, 380, 300))
 
         icon_back = QtGui.QIcon()
         icon_back.addPixmap(QtGui.QPixmap(_fromUtf8(":/MenuImages/icons8-back-26.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -207,6 +247,23 @@ class Ui_Diary(object):
         self.lineStravaID.textChanged.connect(self.strava_updates)
 
         QtCore.QMetaObject.connectSlotsByName(Diary)
+
+    def plot_laps(self):
+        cols = ['LapID', 'StravaID', 'LapStartDate', 'LapTime', 'DistanceMiles', 'DistanceKM', 'SpeedMPH', 'SpeedKPH',
+                'PaceMiles', 'PaceKM', 'AverageHR', 'IntensityPointsHR', 'IntensityPointsPace']
+        measure = 'PaceMiles'
+        laps = pandas.DataFrame(self.strava_laps, columns=cols)
+        laps.IntensityPointsHR = laps.IntensityPointsHR.astype('float64')
+        laps[measure] = laps[measure].astype('float64')
+        self.canvasWidget.canvas.ax.get_yaxis().set_visible(False)
+        self.canvasWidget.canvas.ax.get_xaxis().set_visible(False)
+        self.canvasWidget.canvas.ax.clear()
+        self.canvasWidget.setHidden(False)
+        colors = seaborn.color_palette("Blues", len(self.strava_laps))
+        rank = laps.IntensityPointsHR.argsort().argsort()
+        seaborn.barplot(x=measure, y=laps.index, data=laps, orient="h", color='b',
+                        ax=self.canvasWidget.canvas.ax, palette=numpy.array(colors)[rank])
+        self.canvasWidget.canvas.draw()
 
     def distance_combo_change(self):
         if self.distance_miles is None:
@@ -294,10 +351,58 @@ class Ui_Diary(object):
         self.weight_kg = None
         self.weight_lb = None
         self.run_length_time = datetime.timedelta(0)
+        self.strava_laps = list()
+        self.canvasWidget.setHidden(True)
 
     def get_diary_details(self, diary_id):
+        self.reset_form()
         self.diary_id = diary_id
         diary = settings.database.get_diary_entry(diary_id)
+        diary_date = diary[1]
+        self.dateDiary.setDate(QtCore.QDate(diary_date.year, diary_date.month, diary_date.day))
+        self.timeDiary.setTime(QtCore.QTime(diary_date.hour, diary_date.minute))
+        self.timeRunLength.setTime(QtCore.QTime(0, 0, 0).addSecs(diary[2]))
+        self.comboRunType.setCurrentIndex(self.get_run_type_combo_id(diary[3]))
+        self.lineDistance.setText(str(diary[4]))
+        self.lineSpeed.setText(str(diary[6]))
+        self.linePace.setText(str(diary[8]))
+        self.lineAvgHR.setText(str(diary[10]) if diary[10] else None)
+        self.comboShoe.setCurrentIndex(self.get_shoe_list_combo_id(diary[11]))
+        self.comboWorkout.setCurrentIndex(self.get_workout_combo_id(diary[12]))
+        self.comboEffort.setCurrentIndex(diary[13] if diary[13] else 0)
+        self.comboRating.setCurrentIndex(diary[14] if diary[14] else 0)
+        self.comboRace.setCurrentIndex(self.get_race_combo_id((diary[15])))
+        self.lineStravaID.setText(str(diary[16]) if diary[16] else None)
+        self.lineIntensityPointsHR.setText(str(diary[17]) if diary[17] else None)
+        self.lineIntensityPointsPace.setText(str(diary[18]) if diary[18] else None)
+        self.lineNotes.setText(diary[19])
+        self.get_health_stats_details()
+
+    def get_health_stats_details(self):
+        diary_date = datetime.datetime.combine(self.dateDiary.date().toPyDate(), datetime.datetime.min.time())
+        health_stats = settings.database.get_health_stats(diary_date)
+        self.lineWeight.setText(str(health_stats[2]))
+        self.lineRestingHR.setText(str(health_stats[3]))
+
+    def get_run_type_combo_id(self, id):
+        combo_id = self.comboRunType.findData(id)
+        combo_id = 0 if combo_id == -1 else combo_id
+        return combo_id
+
+    def get_shoe_list_combo_id(self, id):
+        combo_id = self.comboShoe.findData(id)
+        combo_id = 0 if combo_id == -1 else combo_id
+        return combo_id
+
+    def get_workout_combo_id(self, id):
+        combo_id = self.comboWorkout.findData(id)
+        combo_id = 0 if combo_id == -1 else combo_id
+        return combo_id
+
+    def get_race_combo_id(self, id):
+        combo_id = self.comboRace.findData(id)
+        combo_id = 0 if combo_id == -1 else combo_id
+        return combo_id
 
     def set_run_type_combo(self):
         """Sets the values for the comboRunType."""
@@ -349,8 +454,8 @@ class Ui_Diary(object):
              str(self.distance_km),
              str(self.speed_miles),
              str(self.speed_km),
-             str(self.pace_miles),
-             str(self.pace_km),
+             self.pace_miles.total_seconds(),
+             self.pace_km.total_seconds(),
              self.lineAvgHR.text(),
              self.comboShoe.itemData(self.comboShoe.currentIndex()),
              self.comboWorkout.itemData(self.comboWorkout.currentIndex()),
@@ -390,22 +495,41 @@ class Ui_Diary(object):
         if self.lineStravaID.text() == '':
             return
         self.webView.setUrl(QtCore.QUrl(f'https://www.strava.com/activities/{self.lineStravaID.text()}'))
+        self.get_strava_laps()
         self.calculate_intensity_points_hr()
+        self.plot_laps()
 
     def calculate_intensity_points_hr(self):
         points = 0
+        points += sum([dec(x[-2]) for x in self.strava_laps])
+        self.lineIntensityPointsHR.setText(str(points))
+
+    def get_strava_laps(self):
+        """Saves the list of strava laps for the current strava_id."""
+        self.strava_laps = list()
+        strava_id = self.lineStravaID.text()
         try:
-            for lap in strava.get_laps(self.lineStravaID.text()):
-                points += settings.calculate_intensity_points(lap.average_heartrate, lap.elapsed_time)
-            self.lineIntensityPointsHR.setText(str(points))
+            for lap in strava.get_laps(strava_id):
+                self.strava_laps.append((
+                    lap.id, strava_id, lap.start_date_local, lap.moving_time.total_seconds(), str(dec(lap.distance_miles, 4)),
+                    str(dec(lap.distance_km, 4)), str(lap.speed_mile), str(lap.speed_km), lap.pace_mile.total_seconds(),
+                    lap.pace_km.total_seconds(), lap.average_heartrate,
+                    str(settings.calculate_intensity_points(lap.average_heartrate, lap.moving_time)), None)
+                )
         except:
             return
+
+    def save_strava_laps(self):
+        if self.strava_laps:
+            for lap in self.strava_laps:
+                settings.database.add_strava_lap(lap)
 
     def save_diary(self):
         if self.complete_form():
             self.diary_id = settings.database.add_diary_entry(self.convert_diary_entry())
         if self.complete_weight_form():
             settings.database.add_health_stats(self.convert_health_stats())
+        self.save_strava_laps()
 
     def retranslateUi(self, Diary):
         Diary.setWindowTitle(_translate("Diary", "MainWindow", None))
