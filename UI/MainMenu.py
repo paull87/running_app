@@ -56,6 +56,16 @@ class Ui_RunningApp(object):
         self.buttonShoe.setIcon(icon3)
         self.buttonShoe.setIconSize(QtCore.QSize(64, 64))
         self.buttonShoe.setObjectName("buttonShoe")
+
+        self.button_race = QtWidgets.QPushButton(self.centralwidget)
+        self.button_race.setGeometry(QtCore.QRect(230, 260, 101, 81))
+        self.button_race.setText("")
+        race_icon = QtGui.QIcon()
+        race_icon.addPixmap(QtGui.QPixmap(":/MenuImages/icons8-running-50.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.button_race.setIcon(race_icon)
+        self.button_race.setIconSize(QtCore.QSize(64, 64))
+        self.button_race.setObjectName('buttonRace')
+
         RunningApp.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(RunningApp)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 501, 21))
