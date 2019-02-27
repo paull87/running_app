@@ -381,8 +381,9 @@ class Ui_Diary(object):
     def get_health_stats_details(self):
         diary_date = datetime.datetime.combine(self.dateDiary.date().toPyDate(), datetime.datetime.min.time())
         health_stats = settings.database.get_health_stats(diary_date)
-        self.lineWeight.setText(str(health_stats[2]))
-        self.lineRestingHR.setText(str(health_stats[3]))
+        if health_stats is not None:
+            self.lineWeight.setText(str(health_stats[2]))
+            self.lineRestingHR.setText(str(health_stats[3]))
 
     def get_run_type_combo_id(self, id):
         combo_id = self.comboRunType.findData(id)

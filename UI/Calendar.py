@@ -80,19 +80,27 @@ class CustomList(QtWidgets.QListWidget):
         QtWidgets.QListWidget.__init__(self, *args)
         self.timer = QtCore.QTimer()
         self.timer.setSingleShot(True)
+        self.context_menu = None
         self.itemClicked.connect(self.item_click)
-        #self.timer.timeout.connect(self.item_click)
-        super().clicked.connect(self.checkDoubleClick)
+        self.itemDoubleClicked.connect(self.item_click)
+        self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
 
-    @QtCore.pyqtSlot()
-    def checkDoubleClick(self):
-        if self.timer.isActive():
-            self.timer.stop()
-            print('double')
-            self.doubleClicked.emit(QtCore.QModelIndex())
+    def show_context_menu(self, position):
+        self.context_menu = QtWidgets.QMenu()
+        if self.currentItem():
+            remove_action = self.context_menu.addAction("Remove " + self.currentItem().item_type)
         else:
-            self.timer.start(250)
-            print('single')
+            remove_action = None
+        add_diary_action = self.context_menu.addAction('Add Diary')
+        add_race_action = self.context_menu.addAction('Add Race')
+        menu_action = self.context_menu.exec_(self.mapToGlobal(position))
+        if menu_action == remove_action:
+            print('remove')
+        elif menu_action == add_diary_action:
+            print('add diary')
+        elif menu_action == add_race_action:
+            print('add race')
 
     def item_click(self, item):
         return (item.item_type, item.item_id)
@@ -270,9 +278,9 @@ class Ui_MainWindow(object):
         self.lists[day].setObjectName(_fromUtf8(day))
         self.lists[day].setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.lists[day].setDefaultDropAction(QtCore.Qt.MoveAction)
-        self.lists[day].itemClicked.connect(self.PrintClick)
-        #self.lists[day].clicked.connect(self.PrintClick)
-        self.lists[day].doubleClicked.connect(self.show_diary_window)
+        self.lists[day].itemClicked.connect(self.set_current_item)
+        self.lists[day].itemDoubleClicked.connect(self.show_diary_window)
+        #self.lists[day].doubleClicked.connect(self.show_diary_window)
         if not current:
             self.lists[day].setEnabled(False)
         else:
@@ -314,15 +322,16 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "Calendar", None))
 
-    def show_diary_window(self):
+    def show_diary_window(self, item):
+        self.set_current_item(item)
         if not self.current_item:
             return
         if self.current_item[0] == 'Diary':
             self.diary_window.get_diary_details(self.current_item[1])
             self.diary_window.show()
 
-    def PrintClick(self, item):
-        pass
+    def set_current_item(self, item):
+        self.current_item = (item.item_type, item.item_id)
 
 def set_list_widget_colour(list_type):
     """Returns the colour for that list widget type given."""

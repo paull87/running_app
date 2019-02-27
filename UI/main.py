@@ -28,9 +28,6 @@ class CalendarWindow(QMainWindow, Calendar.Ui_MainWindow):
         self.pushNextMonth.clicked.connect(self.next_month)
         self.pushPrevMonth.clicked.connect(self.prev_month)
 
-    def PrintClick(self, item):
-        self.current_item = (item.item_type, item.item_id)
-
     def combo_change_calendar(self):
         """On change of the combo boxes, the calendar is regenerated."""
         if (self.comboMonth.currentIndex() + 1 == self._current_month and
