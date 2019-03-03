@@ -293,3 +293,50 @@ def test_amend_strava_lap(database):
     database.add_strava_lap(new_lap)
     assert database.get_strava_laps(54321) == [new_lap, ]
 
+
+def test_add_race(database):
+    race = [None, 'Test Race Name', '10K']
+    race_id = database.add_race(race)
+    assert race_id == 11
+
+
+def test_get_race_list(database):
+    races = ((None, 'Test Race Name', '10K'), (None, 'Test Race Name2', 'HalfMarathon'))
+    for race in races:
+        database.add_race(race)
+    assert database.get_race_list() == [x[1:] for x in races]
+
+
+def test_amend_race(database):
+    race = [None, 'Test Race Name', '10K']
+    race_id = database.add_race(race)
+    new_race = (race_id, 'Changed Name', '10Mile')
+    database.add_race(new_race)
+    assert database.get_race_list() == [new_race[1:]]
+
+
+def test_add_race_detail(database):
+    race = (None, 'Test Race Name', '10K')
+    database.add_race(race)
+    race_datail = (None, *race[1:], start_date, 420, None)
+    race_detail_id = database.add_amend_race_detail(race_datail)
+    assert race_detail_id == 1
+
+
+def test_get_race_details(database):
+    race = (None, 'Test Race Name', '10K')
+    database.add_race(race)
+    race_datail = (None, *race[1:], start_date, 420, None)
+    race_detail_id = database.add_amend_race_detail(race_datail)
+    race_datail = (race_detail_id,) + race_datail[1:]
+    assert database.get_race_detail(race_detail_id) == race_datail
+
+
+def test_amend_race_detail(database):
+    race = (None, 'Test Race Name', '10K')
+    database.add_race(race)
+    race_datail = (None, *race[1:], start_date, 420, None)
+    race_detail_id = database.add_amend_race_detail(race_datail)
+    new_race_detail = (race_detail_id, *race[1:], start_date, 420, 430)
+    database.add_amend_race_detail(new_race_detail)
+    assert database.get_race_detail(race_detail_id) == new_race_detail
