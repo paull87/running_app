@@ -224,6 +224,8 @@ class DB:
     def add_amend_race_detail(self, race_detail):
         """Add or amend the given race detail."""
         cursor = self.connection.cursor()
+        if (race_detail[1], race_detail[2]) not in self.get_race_list():
+            self.add_race((None, race_detail[1], race_detail[2]))
         if race_detail[0] is None:
             cursor.execute(sql_queries.add_race_detail, race_detail[1:])
         else:

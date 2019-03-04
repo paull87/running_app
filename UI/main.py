@@ -9,6 +9,7 @@ import Calendar
 import MainMenu
 import Diary
 import ShoeList
+import Race
 
 settings = Settings()
 
@@ -86,18 +87,29 @@ class ShoeListWindow(QMainWindow, ShoeList.Ui_ShoeList):
         self.setupUi(self)
 
 
+class RaceWindow(QMainWindow, Race.UiRace):
+    def __init__(self):
+        QMainWindow.__init__(self)
+        Race.UiRace.__init__(self)
+        self.setup_ui(self,)
+        self.race_id = None
+
+
 class Window(QMainWindow, MainMenu.Ui_RunningApp):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setupUi(self)
         self.calendar_window = CalendarWindow()
         self.diary_window = DiaryWindow()
+        self.race_window = RaceWindow()
         self.calendar_window.set_diary_window(self.diary_window)
+        self.calendar_window.set_race_window(self.race_window)
         self.shoe_window = ShoeListWindow()
         # Set action for clicking browse button
         self.buttonCalendar.clicked.connect(self.open_calendar)
         self.buttonDiary.clicked.connect(self.open_diary)
         self.buttonShoe.clicked.connect(self.open_shoe_list)
+        self.button_race.clicked.connect(self.open_race)
 
     def open_calendar(self):
         self.calendar_window.show()
@@ -105,6 +117,10 @@ class Window(QMainWindow, MainMenu.Ui_RunningApp):
     def open_diary(self):
         self.diary_window.reset_form()
         self.diary_window.show()
+
+    def open_race(self):
+        self.race_window.reset_form()
+        self.race_window.show()
 
     def open_shoe_list(self):
         self.shoe_window.show()

@@ -16,17 +16,17 @@ except AttributeError:
 
 class UiRace(object):
 
-    def __init__(self):
-        self.race_id = None
-        self.central_widget = None
-        self.date_race = None
-        self.combo_race_name = None
-        self.combo_race_distance = None
-        self.time_goal = None
-        self.time_actual = None
-        self.button_save = None
-        self.menu_bar = None
-        self.status_bar = None
+    # def __init__(self):
+    #     self.race_id = None
+    #     self.central_widget = None
+    #     self.date_race = None
+    #     self.combo_race_name = None
+    #     self.combo_race_distance = None
+    #     self.time_goal = None
+    #     self.time_actual = None
+    #     self.button_save = None
+    #     self.menu_bar = None
+    #     self.status_bar = None
 
     def setup_ui(self, race):
         race.resize(400, 300)
@@ -66,14 +66,14 @@ class UiRace(object):
         self.button_save.setText(_translate("Race", "Save", None))
         self.button_save.clicked.connect(self.save_race)
 
-        Race.setCentralWidget(self.central_widget)
-        self.menu_bar = QtWidgets.QMenuBar(Race)
+        race.setCentralWidget(self.central_widget)
+        self.menu_bar = QtWidgets.QMenuBar(race)
         self.menu_bar.setGeometry(QtCore.QRect(0, 0, 800, 21))
-        Race.setMenuBar(self.menu_bar)
-        self.status_bar = QtWidgets.QStatusBar(Race)
-        Race.setStatusBar(self.status_bar)
+        race.setMenuBar(self.menu_bar)
+        self.status_bar = QtWidgets.QStatusBar(race)
+        race.setStatusBar(self.status_bar)
 
-        QtCore.QMetaObject.connectSlotsByName(Race)
+        QtCore.QMetaObject.connectSlotsByName(race)
 
         self.reset_form()
 
@@ -112,9 +112,10 @@ class UiRace(object):
 
     def convert_race_entry(self):
         return (
-            datetime.datetime.combine(self.date_race.date().toPyDate(), datetime.datetime.min.time()),
+            self.race_id,
             self.combo_race_name.currentText(),
             self.combo_race_distance.itemData(self.combo_race_distance.currentIndex()),
+            datetime.datetime.combine(self.date_race.date().toPyDate(), datetime.datetime.min.time()),
             (datetime.datetime.combine(datetime.date.min, self.time_goal.time().toPyTime())
              - datetime.datetime.min).total_seconds(),
             (datetime.datetime.combine(datetime.date.min, self.time_actual.time().toPyTime())
@@ -125,6 +126,29 @@ class UiRace(object):
         """Saves the current race and race detail."""
         if self.complete_form():
             print(self.convert_race_entry())
+            settings.database.add_amend_race_detail(self.convert_race_entry())
+
+    def get_race_name_combo_id(self, race_name):
+        combo_id = self.combo_race_name.findText(race_name)
+        combo_id = 0 if combo_id == -1 else combo_id
+        return combo_id
+
+    def get_race_distance_combo_id(self, distance):
+        combo_id = self.combo_race_distance.findData(distance)
+        combo_id = 0 if combo_id == -1 else combo_id
+        return combo_id
+
+    def get_race_details(self, race_details_id):
+        self.reset_form()
+        self.race_id = race_details_id
+        race_detail = settings.database.get_race_detail(race_details_id)
+        print(race_detail)
+        self.combo_race_name.setCurrentIndex(self.get_race_name_combo_id(race_detail[1]))
+        self.combo_race_distance.setCurrentIndex(self.get_race_distance_combo_id(race_detail[2]))
+        race_date = race_detail[3]
+        self.date_race.setDate(QtCore.QDate(race_date.year, race_date.month, race_date.day))
+        self.time_goal.setTime(QtCore.QTime(0, 0, 0).addSecs(race_detail[4] if race_detail[4] else 0))
+        self.time_actual.setTime(QtCore.QTime(0, 0, 0).addSecs(race_detail[5] if race_detail[5] else 0))
 
 
 if __name__ == "__main__":

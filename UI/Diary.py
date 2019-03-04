@@ -432,8 +432,8 @@ class Ui_Diary(object):
     def set_workout_combo(self):
         """Sets the values for the comboWorkout."""
         start_date = datetime.datetime.combine(self.dateDiary.date().toPyDate(), datetime.datetime.min.time())
-        end_date = start_date + datetime.timedelta(days=7)
-        start_date = start_date - datetime.timedelta(days=7)
+        end_date = start_date + datetime.timedelta(days=10)
+        start_date = start_date - datetime.timedelta(days=10)
         self.comboWorkout.clear()
         self.comboWorkout.addItem('Workout', 0)
         workouts = [x for x in settings.database.get_calendar_range(start_date, end_date) if x[0] == 'Workout']

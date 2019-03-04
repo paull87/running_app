@@ -153,6 +153,7 @@ class Ui_MainWindow(object):
         self.calendar = None
         self.calendar_items = dict()
         self.diary_window = None
+        self.race_window = None
         self.current_item = None
 
         self.current_date = datetime.date.today()
@@ -228,6 +229,9 @@ class Ui_MainWindow(object):
     def set_diary_window(self, window):
         self.diary_window = window
 
+    def set_race_window(self, window):
+        self.race_window = window
+
     def clear_calendar(self):
         for layout in self.layouts.values():
             while layout.count():
@@ -279,8 +283,8 @@ class Ui_MainWindow(object):
         self.lists[day].setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.lists[day].setDefaultDropAction(QtCore.Qt.MoveAction)
         self.lists[day].itemClicked.connect(self.set_current_item)
-        self.lists[day].itemDoubleClicked.connect(self.show_diary_window)
-        #self.lists[day].doubleClicked.connect(self.show_diary_window)
+        self.lists[day].itemDoubleClicked.connect(self.show_item_window)
+        #self.lists[day].doubleClicked.connect(self.show_item_window)
         if not current:
             self.lists[day].setEnabled(False)
         else:
@@ -322,16 +326,20 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "Calendar", None))
 
-    def show_diary_window(self, item):
+    def show_item_window(self, item):
         self.set_current_item(item)
         if not self.current_item:
             return
         if self.current_item[0] == 'Diary':
             self.diary_window.get_diary_details(self.current_item[1])
             self.diary_window.show()
+        elif self.current_item[0] == 'Race':
+            self.race_window.get_race_details(self.current_item[1])
+            self.race_window.show()
 
     def set_current_item(self, item):
         self.current_item = (item.item_type, item.item_id)
+
 
 def set_list_widget_colour(list_type):
     """Returns the colour for that list widget type given."""
@@ -340,5 +348,4 @@ def set_list_widget_colour(list_type):
         'Workout': '#beaed4',
         'Diary': '#fdc086'
     }
-
     return colours[list_type]
