@@ -76,8 +76,8 @@ class CustomListItem(QtWidgets.QListWidgetItem):
 
 
 class CustomList(QtWidgets.QListWidget):
-    def __init__(self, *args):
-        QtWidgets.QListWidget.__init__(self, *args)
+    def __init__(self, widget_object, current_day):
+        QtWidgets.QListWidget.__init__(self, widget_object)
         self.timer = QtCore.QTimer()
         self.timer.setSingleShot(True)
         self.context_menu = None
@@ -85,6 +85,10 @@ class CustomList(QtWidgets.QListWidget):
         self.itemDoubleClicked.connect(self.item_click)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
+        self.list_date = current_day
+
+    def set_list_date(self, list_date):
+        self.list_date = list_date
 
     def show_context_menu(self, position):
         self.context_menu = QtWidgets.QMenu()
@@ -98,17 +102,23 @@ class CustomList(QtWidgets.QListWidget):
         if menu_action == remove_action:
             print('remove')
         elif menu_action == add_diary_action:
-            print('add diary')
+            self.add_diary_option()
         elif menu_action == add_race_action:
-            print('add race')
+            self.add_race_option()
+
+    def add_race_option(self):
+        print('add race', self.list_date)
+
+    def add_diary_option(self):
+        print('add diary', self.list_date)
 
     def item_click(self, item):
         return (item.item_type, item.item_id)
 
-    def startDrag(self, supportedActions):
+    def startDrag(self, supported_actions):
         drag = QtGui.QDrag(self)
-        mimeData = self.model().mimeData(self.selectedIndexes())
-        drag.setMimeData(mimeData)
+        mime_data = self.model().mime_data(self.selectedIndexes())
+        drag.setMimeData(mime_data)
 
         if drag.exec_(QtCore.Qt.MoveAction) == QtCore.Qt.MoveAction:
             for item in self.selectedItems():
@@ -170,7 +180,6 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
         self.verticalLayout.addLayout(self.horizontalLayout)
 
-
         self.labeldays = dict()
         for day in weekdays:
             self.labeldays[day] = QtWidgets.QLabel(self.verticalLayoutWidget)
@@ -205,10 +214,6 @@ class Ui_MainWindow(object):
         self.pushPrevMonth.setObjectName(_fromUtf8("pushPrevMonth"))
         self.pushPrevMonth.setText(_translate("MainWindow", "Prev", None))
         self.comboMonth.count()
-        #self.comboMonth.raise_()
-        #self.comboYear.raise_()
-        #self.pushNextMonth.raise_()
-        #self.pushPrevMonth.raise_()
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -262,7 +267,7 @@ class Ui_MainWindow(object):
             else:
                 # name = fmt.format(week + 1, day + 1)
                 name = current_day.strftime('%Y%m%d')
-                self.add_calendar_lists(name, current_day.month == month)
+                self.add_calendar_lists(name, current_day.month == month, current_day)
                 self.add_calendar_labels(name)
 
             self.add_calendar_layouts(name)
@@ -276,15 +281,16 @@ class Ui_MainWindow(object):
         self.layouts[day] = QtWidgets.QVBoxLayout()
         self.layouts[day].setObjectName(_fromUtf8("vlay" + day))
 
-    def add_calendar_lists(self, day, current):
+    def add_calendar_lists(self, day, current, current_day):
         """Adds the list for the calendar day."""
-        self.lists[day] = CustomList(self.verticalLayoutWidget)
+        self.lists[day] = CustomList(self.verticalLayoutWidget, current_day)
         self.lists[day].setObjectName(_fromUtf8(day))
         self.lists[day].setDragDropMode(QtWidgets.QAbstractItemView.DragDrop)
         self.lists[day].setDefaultDropAction(QtCore.Qt.MoveAction)
         self.lists[day].itemClicked.connect(self.set_current_item)
         self.lists[day].itemDoubleClicked.connect(self.show_item_window)
-        #self.lists[day].doubleClicked.connect(self.show_item_window)
+        self.lists[day].add_race_option = self.redefine_context_menu_add_race(self.lists[day])
+        self.lists[day].add_diary_option = self.redefine_context_menu_add_diary(self.lists[day])
         if not current:
             self.lists[day].setEnabled(False)
         else:
@@ -339,6 +345,18 @@ class Ui_MainWindow(object):
 
     def set_current_item(self, item):
         self.current_item = (item.item_type, item.item_id)
+
+    def redefine_context_menu_add_race(self, list_widget):
+        def func():
+            self.race_window.reset_form(list_widget.list_date)
+            self.race_window.show()
+        return func
+
+    def redefine_context_menu_add_diary(self, list_widget):
+        def func():
+            self.diary_window.reset_form(list_widget.list_date)
+            self.diary_window.show()
+        return func
 
 
 def set_list_widget_colour(list_type):

@@ -95,9 +95,12 @@ class UiRace(object):
         for race_name in settings.database.get_race_list():
             self.combo_race_name.addItem(race_name[0], race_name[1])
 
-    def reset_form(self):
+    def reset_form(self, current_date=None):
         """Reset the form values."""
-        self.date_race.setDate(QtCore.QDate.currentDate())
+        if current_date:
+            self.date_race.setDate(QtCore.QDate(current_date.year, current_date.month, current_date.day))
+        else:
+            self.date_race.setDate(QtCore.QDate.currentDate())
         self.set_race_distance_combo()
         self.set_race_name_combo()
         self.time_goal.setTime(QtCore.QTime(0, 0, 0))
@@ -125,8 +128,8 @@ class UiRace(object):
     def save_race(self):
         """Saves the current race and race detail."""
         if self.complete_form():
-            print(self.convert_race_entry())
             settings.database.add_amend_race_detail(self.convert_race_entry())
+            self.statusbar.showMessage('Race Saved', 5000)
 
     def get_race_name_combo_id(self, race_name):
         combo_id = self.combo_race_name.findText(race_name)

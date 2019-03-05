@@ -111,6 +111,8 @@ class Window(QMainWindow, MainMenu.Ui_RunningApp):
         self.buttonShoe.clicked.connect(self.open_shoe_list)
         self.button_race.clicked.connect(self.open_race)
 
+        self.calendar_window
+
     def open_calendar(self):
         self.calendar_window.show()
 

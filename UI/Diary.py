@@ -324,8 +324,12 @@ class Ui_Diary(object):
                 self.weight_kg = dec(self.lineWeight.text())
                 self.weight_lb = convert_weight(self.weight_kg, 'kg', 'lb')
 
-    def reset_form(self):
+    def reset_form(self, current_day=None):
         self.timeDiary.setTime(QtCore.QTime(0, 0))
+        if current_day:
+            self.dateDiary.setDate(QtCore.QDate(current_day.year, current_day.month, current_day.day))
+        else:
+            self.dateDiary.setDate(QtCore.QDate.currentDate())
         self.dateDiary.setDate(QtCore.QDate.currentDate())
         self.timeRunLength.setTime(QtCore.QTime(0, 0, 0))
         self.set_shoe_list_combo()
@@ -526,11 +530,17 @@ class Ui_Diary(object):
                 settings.database.add_strava_lap(lap)
 
     def save_diary(self):
+        message = ''
         if self.complete_form():
             self.diary_id = settings.database.add_diary_entry(self.convert_diary_entry())
+            message += 'Diary '
         if self.complete_weight_form():
             settings.database.add_health_stats(self.convert_health_stats())
+            message += 'Health Stats '
         self.save_strava_laps()
+        if message != '':
+            self.statusbar.showMessage(message + 'saved', 5000)
+
 
     def retranslateUi(self, Diary):
         Diary.setWindowTitle(_translate("Diary", "MainWindow", None))
