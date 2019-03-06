@@ -4,6 +4,8 @@ from collections import namedtuple
 import os
 import re
 import sqlite3
+from dateutil.relativedelta import relativedelta
+import datetime
 
 
 class DB:
@@ -205,6 +207,46 @@ class DB:
     def get_strava_laps(self, strava_id):
         """Returns a list of laps for a given strava_id"""
         return self.connection.cursor().execute(sql_queries.get_strava_lap, (strava_id,)).fetchall()
+
+    def add_race(self, race):
+        """Adds or amends a race."""
+        cursor = self.connection.cursor()
+        if race[0] is None:
+            cursor.execute(sql_queries.add_race, race[1:])
+        else:
+            cursor.execute(sql_queries.edit_race, tuple(race[1:]) + (race[0],))
+        race_id = cursor.lastrowid
+        self.connection.commit()
+        return race_id
+
+    def get_race_list(self):
+        """Returns a list of races."""
+        return self.connection.cursor().execute(sql_queries.get_race_list).fetchall()
+
+    def add_amend_race_detail(self, race_detail):
+        """Add or amend the given race detail."""
+        cursor = self.connection.cursor()
+        if (race_detail[1], race_detail[2]) not in self.get_race_list():
+            self.add_race((None, race_detail[1], race_detail[2]))
+        if race_detail[0] is None:
+            cursor.execute(sql_queries.add_race_detail, race_detail[1:])
+        else:
+            cursor.execute(sql_queries.edit_race_detail, tuple(race_detail[1:]) + (race_detail[0],))
+        race_id = cursor.lastrowid
+        self.connection.commit()
+        return race_id
+
+    def get_race_detail(self, race_detail_id):
+        """Returns the race detail for the given id."""
+        return self.connection.cursor().execute(sql_queries.get_race_detail, (race_detail_id,)).fetchone()
+
+    def get_week_summaries(self, month, year):
+        """Returns the week summaries for a given date range."""
+        date_from = datetime.datetime(day=1, month=month, year=year)
+        date_to = date_from + relativedelta(months=1)
+        return named_tuple_result('WeekSummaries', self.connection.cursor().execute(sql_queries.get_week_summaries,
+                                                                                    (date_from.date(), date_to.date())
+                                                                                    ))
 
 
 def named_tuple_result(name, results):

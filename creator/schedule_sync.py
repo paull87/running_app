@@ -35,7 +35,7 @@ class WorkoutSync:
         """Creates the workouts files to be synced."""
         workout = Workout(scheduled_workout.Name, self.settings.zones,
                           ast.literal_eval(scheduled_workout.WorkoutJSON), self.settings.units,
-                          self.settings.max_hr)#, scheduled_workout.FileName, scheduled_workout.SerialNumber)
+                          self.settings.max_hr)
         self.create_workout_file(workout, self.settings.workout_template)
         return workout
 

@@ -324,8 +324,12 @@ class Ui_Diary(object):
                 self.weight_kg = dec(self.lineWeight.text())
                 self.weight_lb = convert_weight(self.weight_kg, 'kg', 'lb')
 
-    def reset_form(self):
+    def reset_form(self, current_day=None):
         self.timeDiary.setTime(QtCore.QTime(0, 0))
+        if current_day:
+            self.dateDiary.setDate(QtCore.QDate(current_day.year, current_day.month, current_day.day))
+        else:
+            self.dateDiary.setDate(QtCore.QDate.currentDate())
         self.dateDiary.setDate(QtCore.QDate.currentDate())
         self.timeRunLength.setTime(QtCore.QTime(0, 0, 0))
         self.set_shoe_list_combo()
@@ -381,8 +385,9 @@ class Ui_Diary(object):
     def get_health_stats_details(self):
         diary_date = datetime.datetime.combine(self.dateDiary.date().toPyDate(), datetime.datetime.min.time())
         health_stats = settings.database.get_health_stats(diary_date)
-        self.lineWeight.setText(str(health_stats[2]))
-        self.lineRestingHR.setText(str(health_stats[3]))
+        if health_stats is not None:
+            self.lineWeight.setText(str(health_stats[2]))
+            self.lineRestingHR.setText(str(health_stats[3]))
 
     def get_run_type_combo_id(self, id):
         combo_id = self.comboRunType.findData(id)
@@ -431,8 +436,8 @@ class Ui_Diary(object):
     def set_workout_combo(self):
         """Sets the values for the comboWorkout."""
         start_date = datetime.datetime.combine(self.dateDiary.date().toPyDate(), datetime.datetime.min.time())
-        end_date = start_date + datetime.timedelta(days=7)
-        start_date = start_date - datetime.timedelta(days=7)
+        end_date = start_date + datetime.timedelta(days=10)
+        start_date = start_date - datetime.timedelta(days=10)
         self.comboWorkout.clear()
         self.comboWorkout.addItem('Workout', 0)
         workouts = [x for x in settings.database.get_calendar_range(start_date, end_date) if x[0] == 'Workout']
@@ -525,11 +530,17 @@ class Ui_Diary(object):
                 settings.database.add_strava_lap(lap)
 
     def save_diary(self):
+        message = ''
         if self.complete_form():
             self.diary_id = settings.database.add_diary_entry(self.convert_diary_entry())
+            message += 'Diary '
         if self.complete_weight_form():
             settings.database.add_health_stats(self.convert_health_stats())
+            message += 'Health Stats '
         self.save_strava_laps()
+        if message != '':
+            self.statusbar.showMessage(message + 'saved', 5000)
+
 
     def retranslateUi(self, Diary):
         Diary.setWindowTitle(_translate("Diary", "MainWindow", None))

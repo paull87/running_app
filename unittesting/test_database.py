@@ -293,3 +293,67 @@ def test_amend_strava_lap(database):
     database.add_strava_lap(new_lap)
     assert database.get_strava_laps(54321) == [new_lap, ]
 
+
+def test_add_race(database):
+    race = [None, 'Test Race Name', '10K']
+    race_id = database.add_race(race)
+    assert race_id == 11
+
+
+def test_get_race_list(database):
+    races = ((None, 'Test Race Name', '10K'), (None, 'Test Race Name2', 'HalfMarathon'))
+    for race in races:
+        database.add_race(race)
+    assert database.get_race_list() == [x[1:] for x in races]
+
+
+def test_amend_race(database):
+    race = [None, 'Test Race Name', '10K']
+    race_id = database.add_race(race)
+    new_race = (race_id, 'Changed Name', '10Mile')
+    database.add_race(new_race)
+    assert database.get_race_list() == [new_race[1:]]
+
+
+def test_add_race_detail(database):
+    race = (None, 'Test Race Name', '10K')
+    database.add_race(race)
+    race_datail = (None, *race[1:], start_date, 420, None)
+    race_detail_id = database.add_amend_race_detail(race_datail)
+    assert race_detail_id == 1
+
+
+def test_get_race_details(database):
+    race = (None, 'Test Race Name', '10K')
+    database.add_race(race)
+    race_datail = (None, *race[1:], start_date, 420, None)
+    race_detail_id = database.add_amend_race_detail(race_datail)
+    race_datail = (race_detail_id,) + race_datail[1:]
+    assert database.get_race_detail(race_detail_id) == race_datail
+
+
+def test_amend_race_detail(database):
+    race = (None, 'Test Race Name', '10K')
+    database.add_race(race)
+    race_datail = (None, *race[1:], start_date, 420, None)
+    race_detail_id = database.add_amend_race_detail(race_datail)
+    new_race_detail = (race_detail_id, *race[1:], start_date, 420, 430)
+    database.add_amend_race_detail(new_race_detail)
+    assert database.get_race_detail(race_detail_id) == new_race_detail
+
+
+def test_get_week_summaries(database):
+    diary_entries = [[None, start_date + datetime.timedelta(hours=7, minutes=45),
+                   datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600, 500,
+                   152, None, None, 4, 3, None, None, 2.54, 2.54, "Test Description", 0],
+                     [None, start_date + datetime.timedelta(hours=7, minutes=45) + datetime.timedelta(days=1),
+                      datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600,
+                      500,
+                      152, None, None, 4, 3, None, None, 2.54, 2.54, "Test Description", 0],
+                     ]
+    for entry in diary_entries:
+        database.add_diary_entry(entry)
+    summaries = database.get_week_summaries(start_date.month, start_date.year)
+    assert summaries[0].Week == '2018-11-04'
+    assert summaries[0].TotalTime == 5468
+    assert summaries[0].TotalDistance == 12.4

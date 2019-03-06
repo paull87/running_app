@@ -109,6 +109,7 @@ FROM TrainingInterval;
 get_distances = """
 SELECT
     Name,
+    PrintName,
     KM,
     Miles
 FROM Distance;"""
@@ -447,3 +448,83 @@ FROM StravaLap
 WHERE StravaID = ?
 ORDER BY LapStartDate, LapID;
 """
+
+add_race = """
+INSERT INTO Race(RaceName, DistanceID)
+SELECT ?, DistanceID
+FROM Distance
+WHERE Name = ?"""
+
+edit_race = """
+UPDATE Race
+SET RaceName = ?,
+    DistanceID = (SELECT DistanceID FROM Distance WHERE Name = ?)
+WHERE RaceID = ?;"""
+
+get_race_list = """
+SELECT RaceName, Name
+FROM Race
+INNER JOIN Distance
+    ON Race.DistanceID = Distance.DistanceID
+WHERE 
+    RaceName NOT LIKE 'Unknown%'
+    OR RaceID IN (SELECT RaceID FROM RaceDetail);"""
+
+add_race_detail = """
+INSERT INTO RaceDetail(RaceID, RaceDate, GoalTime, ActualTime)
+SELECT 
+    (SELECT RaceID
+    FROM Race
+    INNER JOIN Distance
+        ON Race.DistanceID = Distance.DistanceID
+    WHERE RaceName = ?
+    AND Name = ?),
+    ?, ?, ?;"""
+
+edit_race_detail = """
+UPDATE RaceDetail
+SET RaceID = (SELECT RaceID
+    FROM Race
+    INNER JOIN Distance
+        ON Race.DistanceID = Distance.DistanceID
+    WHERE RaceName = ?
+    AND Name = ?), 
+    RaceDate = ?, 
+    GoalTime = ?, 
+    ActualTime = ?
+WHERE RaceDetailID = ?;"""
+
+get_race_detail = """
+SELECT RaceDetailID, Race.RaceName, Distance.Name, RaceDate, GoalTime, ActualTime
+FROM RaceDetail
+INNER JOIN Race
+    ON RaceDetail.RaceID = Race.RaceID
+INNER JOIN Distance
+    ON Race.DistanceID = Distance.DistanceID
+WHERE RaceDetailID = ?;"""
+
+get_week_summaries = """
+WITH RECURSIVE dates(date) AS (
+  VALUES(?)
+  UNION ALL
+  SELECT date(date, '+1 day')
+  FROM dates
+  WHERE date < ?
+)
+
+SELECT
+     AllWeeks.Week, 
+     COALESCE(TotalTime, 0) AS TotalTime,
+     COALESCE(TotalDistance, 0.0) AS TotalDistance
+FROM 
+    (SELECT DISTINCT date(date, 'weekday 0', '0 days') AS Week
+     FROM dates) AS AllWeeks
+LEFT JOIN 
+    (SELECT 
+         date(DiaryDate, 'weekday 0', '0 days') AS DiaryWeek, 
+         SUM(RunTime) AS TotalTime, 
+         SUM(DistanceMiles) AS TotalDistance
+     FROM Diary
+     GROUP BY date(diarydate, 'weekday 0', '0 days')) AS DiaryWeeks
+ ON AllWeeks.Week = DiaryWeeks.DiaryWeek
+ORDER BY AllWeeks.Week"""
