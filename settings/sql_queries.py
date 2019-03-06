@@ -502,3 +502,29 @@ INNER JOIN Race
 INNER JOIN Distance
     ON Race.DistanceID = Distance.DistanceID
 WHERE RaceDetailID = ?;"""
+
+get_week_summaries = """
+WITH RECURSIVE dates(date) AS (
+  VALUES(?)
+  UNION ALL
+  SELECT date(date, '+1 day')
+  FROM dates
+  WHERE date < ?
+)
+
+SELECT
+     AllWeeks.Week, 
+     COALESCE(TotalTime, 0) AS TotalTime,
+     COALESCE(TotalDistance, 0.0) AS TotalDistance
+FROM 
+    (SELECT DISTINCT date(date, 'weekday 0', '0 days') AS Week
+     FROM dates) AS AllWeeks
+LEFT JOIN 
+    (SELECT 
+         date(DiaryDate, 'weekday 0', '0 days') AS DiaryWeek, 
+         SUM(RunTime) AS TotalTime, 
+         SUM(DistanceMiles) AS TotalDistance
+     FROM Diary
+     GROUP BY date(diarydate, 'weekday 0', '0 days')) AS DiaryWeeks
+ ON AllWeeks.Week = DiaryWeeks.DiaryWeek
+ORDER BY AllWeeks.Week"""

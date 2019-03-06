@@ -91,7 +91,7 @@ def determine_weight_type(from_unit, to_unit):
     return weight_converter_dict['{}-{}'.format(from_unit, to_unit)]
 
 
-def time_to_string(time, fmt):
+def time_to_string(time, fmt='{hours:02d}:{minutes:02d}:{seconds:02d}'):
     """Converts timedelta to the given format."""
     d = {}
     d['hours'], rem = divmod(time.seconds, 3600)
@@ -107,6 +107,7 @@ def calculate_speed(distance, time):
 def convert_weight(weight, from_unit, to_unit):
     """Converts given to from one unit to the other."""
     return dec(dec(weight) * determine_weight_type(from_unit, to_unit))
+
 
 if __name__ == '__main__':
     print('Mile Conversions')

@@ -4,6 +4,8 @@ from collections import namedtuple
 import os
 import re
 import sqlite3
+from dateutil.relativedelta import relativedelta
+import datetime
 
 
 class DB:
@@ -237,6 +239,14 @@ class DB:
     def get_race_detail(self, race_detail_id):
         """Returns the race detail for the given id."""
         return self.connection.cursor().execute(sql_queries.get_race_detail, (race_detail_id,)).fetchone()
+
+    def get_week_summaries(self, month, year):
+        """Returns the week summaries for a given date range."""
+        date_from = datetime.datetime(day=1, month=month, year=year)
+        date_to = date_from + relativedelta(months=1)
+        return named_tuple_result('WeekSummaries', self.connection.cursor().execute(sql_queries.get_week_summaries,
+                                                                                    (date_from.date(), date_to.date())
+                                                                                    ))
 
 
 def named_tuple_result(name, results):

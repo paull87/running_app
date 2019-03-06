@@ -10,6 +10,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import datetime
 from dateutil.relativedelta import relativedelta
 from settings.settings import Settings
+from settings.converters import dec, time_to_string
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -256,14 +257,14 @@ class Ui_MainWindow(object):
     def create_calendar(self, start_date, weeks, month, year):
         self.clear_calendar()
         self.calendar = settings.get_calendar(month, year)
+        self.week_summaries = settings.database.get_week_summaries(month, year)
         fmt = 'W{0}D{1}'
         for day, week in [(d, w) for w in range(weeks) for d in range(8)]:
             current_day = start_date + relativedelta(days=(7 * week) + day)
             if day == 7:
                 name = 'W{0}Weekly'.format(week + 1)
                 self.add_calendar_labels(name)
-                self.add_calendar_labels(name + 'Summary', True)
-                #self.add_calendar_lists(name, current_day.month == month)
+                self.add_calendar_labels(name + 'Summary', self.week_summaries[week])
             else:
                 # name = fmt.format(week + 1, day + 1)
                 name = current_day.strftime('%Y%m%d')
@@ -299,7 +300,6 @@ class Ui_MainWindow(object):
     def add_calendar_items(self, day):
         """Adds calendar items to the day view."""
         for i, item in enumerate([x for x in self.calendar if x[2].replace(hour=0, minute=0, second=0) == datetime.datetime.strptime(day, '%Y%m%d')]):
-            print(item)
             item_name = '{0}\n{3}'.format(*item)
             list_item = '{0}_{1}'.format(*item)
             self.calendar_items[list_item] = CustomListItem()
@@ -316,10 +316,13 @@ class Ui_MainWindow(object):
         else:
             self.layouts[day].addWidget(self.lists[day])
 
-    def add_calendar_labels(self, day, summary=False):
+    def add_calendar_labels(self, day, summary=None):
         """Adds the calendar day labels and summary ."""
         if summary:
-            label_text = '<b>Distance</b><br>0.0<br><b>Time</b><br>00:00:00'
+            total_time = time_to_string(datetime.timedelta(seconds=summary.TotalTime))
+            total_dist = dec(summary.TotalDistance, 2)
+            label_text = '<b>Distance</b><br>{total_dist}<br><b>Time</b><br>{total_time}'.format(total_time=total_time,
+                                                                                        total_dist=total_dist)
         elif 'Weekly' in day:
             label_text = ''
         else:

@@ -340,3 +340,20 @@ def test_amend_race_detail(database):
     new_race_detail = (race_detail_id, *race[1:], start_date, 420, 430)
     database.add_amend_race_detail(new_race_detail)
     assert database.get_race_detail(race_detail_id) == new_race_detail
+
+
+def test_get_week_summaries(database):
+    diary_entries = [[None, start_date + datetime.timedelta(hours=7, minutes=45),
+                   datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600, 500,
+                   152, None, None, 4, 3, None, None, 2.54, 2.54, "Test Description", 0],
+                     [None, start_date + datetime.timedelta(hours=7, minutes=45) + datetime.timedelta(days=1),
+                      datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600,
+                      500,
+                      152, None, None, 4, 3, None, None, 2.54, 2.54, "Test Description", 0],
+                     ]
+    for entry in diary_entries:
+        database.add_diary_entry(entry)
+    summaries = database.get_week_summaries(start_date.month, start_date.year)
+    assert summaries[0].Week == '2018-11-04'
+    assert summaries[0].TotalTime == 5468
+    assert summaries[0].TotalDistance == 12.4
