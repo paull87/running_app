@@ -57,9 +57,9 @@ def set_race_dates(start_date, workouts):
 if __name__ == '__main__':
 
     settings = Settings()
-    Scheduler(settings, 'Half Marathon 47 Miles', 'Big Half 2019',
-                  #start_date=datetime.datetime(day=1, month=7, year=2018),
-                  race_date=datetime.datetime(day=17, month=3, year=2019))
+    Scheduler(settings, 'Half Marathon 47 Miles', 'Chistlehurst Half Marathon',
+                  start_date=datetime.datetime(day=25, month=3, year=2019),
+                  race_date=datetime.datetime(day=19, month=5, year=2019))
 
     #create_schedule('Half Marathon 47 Miles', '04/03/2018')
     #plans = ['Half Marathon 47 Miles', 'Half Marathon 63 Miles', 'Marathon 55 Miles', '5K 40 Miles', '10K 42 Miles']

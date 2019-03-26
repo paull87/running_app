@@ -97,6 +97,7 @@ class UiRace(object):
 
     def reset_form(self, current_date=None):
         """Reset the form values."""
+        self.race_id = None
         if current_date:
             self.date_race.setDate(QtCore.QDate(current_date.year, current_date.month, current_date.day))
         else:
@@ -129,7 +130,7 @@ class UiRace(object):
         """Saves the current race and race detail."""
         if self.complete_form():
             settings.database.add_amend_race_detail(self.convert_race_entry())
-            self.statusbar.showMessage('Race Saved', 5000)
+            self.status_bar.showMessage('Race Saved', 5000)
 
     def get_race_name_combo_id(self, race_name):
         combo_id = self.combo_race_name.findText(race_name)

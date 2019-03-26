@@ -139,7 +139,8 @@ class Ui_Diary(object):
         self.lineAvgHR.setGeometry(QtCore.QRect(50, 260, 80, 25))
         self.lineAvgHR.setObjectName(_fromUtf8("lineAvgHR"))
 
-        self.lineNotes = QtWidgets.QLineEdit(self.centralwidget)
+        self.lineNotes = QtWidgets.QTextEdit(self.centralwidget)
+        self.lineNotes.setLineWrapMode(1)
         self.lineNotes.setGeometry(QtCore.QRect(50, 290, 280, 100))
         self.lineNotes.setAlignment(QtCore.Qt.AlignLeading | QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         self.lineNotes.setObjectName(_fromUtf8("lineNotes"))
@@ -325,12 +326,12 @@ class Ui_Diary(object):
                 self.weight_lb = convert_weight(self.weight_kg, 'kg', 'lb')
 
     def reset_form(self, current_day=None):
+        self.diary_id = None
         self.timeDiary.setTime(QtCore.QTime(0, 0))
         if current_day:
             self.dateDiary.setDate(QtCore.QDate(current_day.year, current_day.month, current_day.day))
         else:
             self.dateDiary.setDate(QtCore.QDate.currentDate())
-        self.dateDiary.setDate(QtCore.QDate.currentDate())
         self.timeRunLength.setTime(QtCore.QTime(0, 0, 0))
         self.set_shoe_list_combo()
         self.set_run_type_combo()
@@ -470,7 +471,7 @@ class Ui_Diary(object):
              self.lineStravaID.text(),
              self.lineIntensityPointsHR.text(),
              self.lineIntensityPointsPace.text(),
-             self.lineNotes.text(),
+             self.lineNotes.toPlainText(),
              False
          )
 
@@ -541,7 +542,6 @@ class Ui_Diary(object):
         if message != '':
             self.statusbar.showMessage(message + 'saved', 5000)
 
-
     def retranslateUi(self, Diary):
         Diary.setWindowTitle(_translate("Diary", "MainWindow", None))
         self.lineDistance.setPlaceholderText(_translate("Diary", "Distance", None))
@@ -554,7 +554,7 @@ class Ui_Diary(object):
         self.comboPace.setItemText(0, _translate("Diary", "Mile/min", None))
         self.comboPace.setItemText(1, _translate("Diary", "KM/min", None))
         self.lineAvgHR.setPlaceholderText(_translate("Diary", "Avg HR", None))
-        self.lineNotes.setPlaceholderText(_translate("Diary", "Commet...", None))
+        self.lineNotes.setPlaceholderText(_translate("Diary", "Comment...", None))
         self.lineWeight.setPlaceholderText(_translate("Diary", "Weight", None))
         self.lineRestingHR.setPlaceholderText(_translate("Diary", "Rest HR", None))
         self.buttonSave.setText(_translate("Diary", "Save", None))

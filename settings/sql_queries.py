@@ -528,3 +528,56 @@ LEFT JOIN
      GROUP BY date(diarydate, 'weekday 0', '0 days')) AS DiaryWeeks
  ON AllWeeks.Week = DiaryWeeks.DiaryWeek
 ORDER BY AllWeeks.Week"""
+
+year_stats = """WITH RECURSIVE dates(date) AS (
+  VALUES('2019-01-01')
+  UNION ALL
+  SELECT date(date, '+1 day')
+  FROM dates
+  WHERE date(date, '+1 day') < '2020-01-01'
+),
+cte_CurrentYear AS (
+    SELECT 
+        date(DiaryDate) AS DiaryDate, STRFTIME('%m-%d', DiaryDate) AS DiaryDay,
+        SUM(distanceMiles) AS TotalDistance,
+        SUM(RunTime) AS TotalTime
+    FROM Diary
+    WHERE DiaryDate >= '2019-01-01'
+    AND DiaryDate < '2020-01-01'
+    GROUP BY date(DiaryDate)
+),
+cte_PreviousYear AS (
+    SELECT date(DiaryDate) AS Diarydate, STRFTIME('%m-%d', DiaryDate) AS DiaryDay,
+    SUM(distanceMiles) AS TotalDistance, 
+    SUM(RunTime) AS TotalTime
+    FROM Diary
+    WHERE DiaryDate >= '2018-01-01'
+    AND DiaryDate < '2019-01-01'
+    GROUP BY date(DiaryDate))
+
+SELECT 
+    STRFTIME('%m-%d', dates.date) AS dayOfYear,
+    cte_currentYear.TotalDistance AS CurrentDistance,
+    (SELECT ROUND(SUM(TotalDistance), 2)
+     FROM cte_CurrentYear AS CumCurrent
+     WHERE CumCurrent.DiaryDay <= STRFTIME('%m-%d', dates.date)
+     AND dates.date <= datetime('now')) AS CumCurrentDistance,
+    cte_currentYear.TotalTime AS CurrentTime,
+    (SELECT ROUND(SUM(TotalTime), 2)
+     FROM cte_CurrentYear AS CumCurrent
+     WHERE CumCurrent.DiaryDay <= STRFTIME('%m-%d', dates.date)
+     AND dates.date <= datetime('now')) AS CumCurrentTime,
+    cte_PreviousYear.TotalDistance AS PreviousDistance,
+    (SELECT ROUND(SUM(TotalDistance),2)
+     FROM cte_PreviousYear AS CumPrevious
+     WHERE CumPrevious.DiaryDay <= STRFTIME('%m-%d', dates.date)) AS CumPreviousDistance,
+    cte_PreviousYear.TotalTime AS PreviousTime,
+    (SELECT ROUND(SUM(TotalTime),2)
+     FROM cte_PreviousYear AS CumPrevious
+     WHERE CumPrevious.DiaryDay <= STRFTIME('%m-%d', dates.date)) AS CumPreviousTime
+FROM dates
+LEFT JOIN cte_CurrentYear
+    ON STRFTIME('%m-%d', dates.date) = cte_CurrentYear.DiaryDay
+LEFT JOIN cte_PreviousYear
+    ON STRFTIME('%m-%d', dates.date) = cte_PreviousYear.DiaryDay
+ORDER BY dayOfYear;"""
