@@ -118,7 +118,7 @@ class CustomList(QtWidgets.QListWidget):
 
     def startDrag(self, supported_actions):
         drag = QtGui.QDrag(self)
-        mime_data = self.model().mime_data(self.selectedIndexes())
+        mime_data = self.model().mimeData(self.selectedIndexes())
         drag.setMimeData(mime_data)
 
         if drag.exec_(QtCore.Qt.MoveAction) == QtCore.Qt.MoveAction:

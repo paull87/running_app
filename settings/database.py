@@ -166,9 +166,10 @@ class DB:
         cursor = self.connection.cursor()
         if diary_entry[0] is None:
             cursor.execute(sql_queries.add_diary_entry, diary_entry[1:])
+            diary_id = cursor.lastrowid
         else:
             cursor.execute(sql_queries.edit_diary_entry, tuple(diary_entry[1:]) + (diary_entry[0],))
-        diary_id = cursor.lastrowid
+            diary_id = diary_entry[0]
         self.connection.commit()
         return diary_id
 
