@@ -1,5 +1,5 @@
 import datetime
-from settings.converters import convert_to_time, dec
+from settings.converters import convert_to_time, dec, calculate_pace
 from collections import namedtuple
 
 
@@ -72,7 +72,6 @@ class VDOT:
         """Calculates the race times based on the vdot score."""
         data = list()
         vdot_score = int(self.vdot_score)
-        #vdot_df = self.VDOT_racetimes[(self.VDOT_racetimes.VDOT >= vdot_score)].iloc[:2, :]
         vdot_df = [x for x in self.VDOT_racetimes if x.xVDOT >= vdot_score]
         for head in vdot_df[0]._fields:
             if head == 'xVDOT':
@@ -83,9 +82,15 @@ class VDOT:
                 pace_diff = getattr(vdot_df[0], head) - getattr(vdot_df[1], head)
                 pace_add = int(dec(dec(pace_diff) * vdot_diff, 0))
             data.append(race_pace(head[1:], getattr(vdot_df[0], head) - pace_add))
-        race_paces = [x for x in self.training_paces if x.Distance in [y.Distance for y in data]]
-        self.race_times = [race_time(x[0].Distance, x[0].Time, x[1].Mile, x[1].KM) for x in
-            tuple(zip(sorted(data, key=lambda x: x.Distance), sorted(race_paces, key=lambda x: x.Distance)))]
+        race_distances = [x for x in self.db.get_distances() if x.Name in [y.Distance for y in data]]
+        self.race_times = [race_time(x[0].Distance, x[0].Time,
+                                     calculate_pace(datetime.timedelta(seconds=x[0].Time), x[1].Miles, 'Mile'
+                                                    ).total_seconds(),
+                                     calculate_pace(datetime.timedelta(seconds=x[0].Time), x[1].KM, 'KM'
+                                                    ).total_seconds())
+                           for x in
+            tuple(zip(sorted(data, key=lambda x: x.Distance), sorted(race_distances, key=lambda x: x.Name)))]
+        print(self.race_times)
 
     def _vdot_dec(self):
         """Returns the decimal of the current vdot score."""

@@ -122,7 +122,8 @@ SELECT
     VDOTRacePace.KMPace AS KM
 FROM VDOTRacePace
 INNER JOIN Distance
-    ON VDOTRacePace.DistanceID = Distance.DistanceID;"""
+    ON VDOTRacePace.DistanceID = Distance.DistanceID
+ORDER BY Distance.Miles;"""
 
 get_training_paces = """
 SELECT
@@ -581,3 +582,18 @@ LEFT JOIN cte_CurrentYear
 LEFT JOIN cte_PreviousYear
     ON STRFTIME('%m-%d', dates.date) = cte_PreviousYear.DiaryDay
 ORDER BY dayOfYear;"""
+
+get_month_summary = """
+SELECT 
+    COUNT(1) AS TotalRuns,
+    COALESCE(SUM(RunTime), 0) AS TotalTime,
+    COALESCE(SUM(DistanceMiles),0) AS TotalDistanceMiles,
+    COALESCE(SUM(DistanceKM),0) AS TotalDistanceKM,
+    COALESCE(AVG(PaceMiles),0) AS AvgPaceMiles,
+    COALESCE(AVG(PaceKM),0) AS AvgPaceKM,
+    COALESCE(SUM(IntensityPointsHR),0) AS TotalPointsHR,
+    COALESCE(AVG(RunRating),0) AS AvgRating
+FROM Diary
+WHERE diaryDate >= ?
+AND diaryDate < ?;
+"""
