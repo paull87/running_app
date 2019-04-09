@@ -66,6 +66,10 @@ class Ui_RunningApp(object):
         self.button_race.setIconSize(QtCore.QSize(64, 64))
         self.button_race.setObjectName('buttonRace')
 
+        self.button_vdot = QtWidgets.QPushButton(self.centralwidget)
+        self.button_vdot.setGeometry(QtCore.QRect(350, 260, 101, 81))
+        self.button_vdot.setText(_fromUtf8("VDOT"))
+
         RunningApp.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(RunningApp)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 501, 21))

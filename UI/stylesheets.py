@@ -43,3 +43,9 @@ QAbstractItemView:disabled \n
 { \n
 color: rgb(64, 64, 64); \n
 }"""
+
+calendar_summary = """
+QLabel {
+  font-size: 16px;
+  font-family:'Helvetica', sans-serif;
+}"""

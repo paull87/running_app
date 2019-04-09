@@ -249,6 +249,15 @@ class DB:
                                                                                     (date_from.date(), date_to.date())
                                                                                     ))
 
+    def get_month_summary(self, month, year):
+        """Returns the month summary for a given month range."""
+        date_from = datetime.datetime(day=1, month=month, year=year)
+        date_to = date_from + relativedelta(months=1)
+        result = named_tuple_result('MonthSummary', self.connection.cursor().execute(sql_queries.get_month_summary,
+                                                                                    (date_from.date(), date_to.date())
+                                                                                    ))
+        if len(result) > 0:
+            return result[0]
 
 def named_tuple_result(name, results):
     """Creates a named tuple result set for the given results."""

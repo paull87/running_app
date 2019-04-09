@@ -11,6 +11,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from settings.settings import Settings
 from settings.converters import dec, time_to_string
+import UI.stylesheets as stylesheets
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -166,13 +167,18 @@ class Ui_MainWindow(object):
         self.diary_window = None
         self.race_window = None
         self.current_item = None
+        self.total_runs = 0
+        self.total_distance = 0
+        self.total_time = datetime.timedelta(seconds=0)
+        self.avg_pace = datetime.timedelta(seconds=0)
+        self.avg_rating = 0
 
         self.current_date = datetime.date.today()
 
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(50, 150, 900, 700))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(50, 50, 900, 700))
         self.verticalLayoutWidget.setObjectName(_fromUtf8("verticalLayoutWidget"))
         self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
@@ -189,7 +195,7 @@ class Ui_MainWindow(object):
             self.horizontalLayout.addWidget(self.labeldays[day])
 
         self.comboMonth = QtWidgets.QComboBox(self.centralwidget)
-        self.comboMonth.setGeometry(QtCore.QRect(580, 105, 100, 25))
+        self.comboMonth.setGeometry(QtCore.QRect(580, 30, 100, 25))
         self.comboMonth.setObjectName(_fromUtf8("comboMonth"))
         for i, month in enumerate(months):
             self.comboMonth.addItem(_fromUtf8(""))
@@ -197,7 +203,7 @@ class Ui_MainWindow(object):
         self.comboMonth.setCurrentIndex(self.current_date.month - 1)
 
         self.comboYear = QtWidgets.QComboBox(self.centralwidget)
-        self.comboYear.setGeometry(QtCore.QRect(685, 105, 80, 25))
+        self.comboYear.setGeometry(QtCore.QRect(685, 30, 80, 25))
         self.comboYear.setObjectName(_fromUtf8("comboYear"))
 
         for i, year in enumerate(years):
@@ -207,14 +213,26 @@ class Ui_MainWindow(object):
         self.comboYear.setCurrentIndex(year_index)
 
         self.pushNextMonth = QtWidgets.QPushButton(self.centralwidget)
-        self.pushNextMonth.setGeometry(QtCore.QRect(770, 100, 60, 25))
+        self.pushNextMonth.setGeometry(QtCore.QRect(770, 25, 60, 25))
         self.pushNextMonth.setObjectName(_fromUtf8("pushNextMonth"))
         self.pushNextMonth.setText(_translate("MainWindow", "Next", None))
         self.pushPrevMonth = QtWidgets.QPushButton(self.centralwidget)
-        self.pushPrevMonth.setGeometry(QtCore.QRect(515, 100, 60, 25))
+        self.pushPrevMonth.setGeometry(QtCore.QRect(515, 25, 60, 25))
         self.pushPrevMonth.setObjectName(_fromUtf8("pushPrevMonth"))
         self.pushPrevMonth.setText(_translate("MainWindow", "Prev", None))
         self.comboMonth.count()
+
+        self.lbl_total_runs = QtWidgets.QLabel(self.centralwidget)
+        self.lbl_total_runs.setGeometry(QtCore.QRect(20, 750, 180, 25))
+        self.lbl_total_runs.setStyleSheet(_fromUtf8(stylesheets.calendar_summary))
+
+        self.lbl_total_distance = QtWidgets.QLabel(self.centralwidget)
+        self.lbl_total_distance.setGeometry(QtCore.QRect(20, 775, 180, 25))
+        self.lbl_total_distance.setStyleSheet(_fromUtf8(stylesheets.calendar_summary))
+
+        self.lbl_total_time = QtWidgets.QLabel(self.centralwidget)
+        self.lbl_total_time.setGeometry(QtCore.QRect(20, 800, 180, 25))
+        self.lbl_total_time.setStyleSheet(_fromUtf8(stylesheets.calendar_summary))
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -231,6 +249,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
 
     def set_diary_window(self, window):
         self.diary_window = window
@@ -276,6 +295,16 @@ class Ui_MainWindow(object):
 
             self.gridLayout.setColumnStretch((day+1) % 8, 1)
             self.gridLayout.addLayout(self.layouts[name], week, day, 1, 1)
+        self.update_month_summary(month, year)
+
+    def update_month_summary(self, month, year):
+        summary = settings.database.get_month_summary(month, year)
+        self.total_runs = summary.TotalRuns
+        self.total_distance = summary.TotalDistanceMiles
+        self.total_time = datetime.timedelta(seconds=summary.TotalTime)
+        self.lbl_total_runs.setText(f'Total Runs: {self.total_runs}')
+        self.lbl_total_distance.setText(f'Total Distance: {self.total_distance:.2f}')
+        self.lbl_total_time.setText(f'Total Time: {time_to_string(self.total_time)}')
 
     def add_calendar_layouts(self, day):
         """Adds layout for the calendar day."""

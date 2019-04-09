@@ -357,3 +357,29 @@ def test_get_week_summaries(database):
     assert summaries[0].Week == '2018-11-04'
     assert summaries[0].TotalTime == 5468
     assert summaries[0].TotalDistance == 12.4
+
+
+def test_get_month_summary(database):
+    diary_entries = [[None, start_date + datetime.timedelta(hours=7, minutes=45),
+                   datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600, 500,
+                   152, None, None, 4, 3, None, None, 2.54, 2.54, "Test Description", 0],
+                     [None, start_date + datetime.timedelta(hours=7, minutes=45) + datetime.timedelta(days=1),
+                      datetime.timedelta(hours=0, minutes=45, seconds=34).total_seconds(), 1, 6.2, 10, 7.5, 10.5, 600,
+                      500,
+                      152, None, None, 4, 3, None, None, 2.54, 2.54, "Test Description", 0],
+                     ]
+    for entry in diary_entries:
+        database.add_diary_entry(entry)
+    summary = database.get_month_summary(start_date.month, start_date.year)
+    assert summary.TotalRuns == 2
+    assert summary.TotalTime == 5468
+    assert summary.TotalDistanceMiles == 12.4
+    assert summary.TotalDistanceKM == 20
+
+
+def test_get_month_summary_blank(database):
+    summary = database.get_month_summary(start_date.month, start_date.year)
+    assert summary.TotalRuns == 0
+    assert summary.TotalTime == 0
+    assert summary.TotalDistanceMiles == 0
+    assert summary.TotalDistanceKM == 0
