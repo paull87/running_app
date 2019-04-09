@@ -27,25 +27,28 @@ class UiVDOT(object):
         self.vdot = VDOT(settings.database, settings.vdot)
 
         self.combo_race_distance = QtWidgets.QComboBox(self.central_widget)
-        self.combo_race_distance.setGeometry(QtCore.QRect(50, 50, 130, 25))
+        self.combo_race_distance.setGeometry(QtCore.QRect(50, 20, 130, 25))
 
         self.race_time = QtWidgets.QTimeEdit(self.central_widget)
-        self.race_time.setGeometry(QtCore.QRect(190, 50, 80, 25))
+        self.race_time.setGeometry(QtCore.QRect(190, 20, 80, 25))
         self.race_time.setCalendarPopup(False)
         self.race_time.setDisplayFormat('HH:mm:ss')
 
         self.button_update = QtWidgets.QPushButton(self.central_widget)
-        self.button_update.setGeometry(QtCore.QRect(270, 50, 75, 30))
+        self.button_update.setGeometry(QtCore.QRect(270, 20, 75, 30))
         self.button_update.setText(_translate("VDOT", "Update", None))
         self.button_update.clicked.connect(self.update_vdot)
 
         self.button_save = QtWidgets.QPushButton(self.central_widget)
-        self.button_save.setGeometry(QtCore.QRect(240, 300, 75, 30))
+        self.button_save.setGeometry(QtCore.QRect(240, 340, 75, 30))
         self.button_save.setText(_translate("VDOT", "Save", None))
         self.button_save.clicked.connect(self.save_vdot)
 
         self.race_paces = QtWidgets.QTextEdit(self.central_widget)
-        self.race_paces.setGeometry(QtCore.QRect(50, 80, 200, 200))
+        self.race_paces.setGeometry(QtCore.QRect(50, 50, 250, 280))
+
+        self.training_paces = QtWidgets.QTextEdit(self.central_widget)
+        self.training_paces.setGeometry(QtCore.QRect(350, 50, 250, 280))
 
         vdot_widget.setCentralWidget(self.central_widget)
         self.menu_bar = QtWidgets.QMenuBar(vdot_widget)
@@ -57,7 +60,8 @@ class UiVDOT(object):
         QtCore.QMetaObject.connectSlotsByName(vdot_widget)
 
         self.reset_form()
-        self.update_paces()
+        self.update_race_paces()
+        self.update_training_paces()
 
     def set_race_distance_combo(self):
         """Sets the values for the combo_race_distance."""
@@ -88,17 +92,29 @@ class UiVDOT(object):
         self.vdot.calculate_vdot(
             self.combo_race_distance.itemData(self.combo_race_distance.currentIndex()),
             self.race_time.time().toString('hh:mm:ss'))
-        self.update_paces()
+        self.update_race_paces()
+        self.update_training_paces()
 
-    def update_paces(self):
+    def update_race_paces(self):
         self.race_paces.clear()
         text = ''
         for pace in sorted(self.vdot.race_times, key=lambda x: x.Time):
             pace_time = datetime.timedelta(seconds=pace.Time)
             pace_mile = datetime.timedelta(seconds=pace.Mile)
-            text += '{} {} {}\n'.format(pace.Distance, time_to_string(pace_time),
+            text += '<p><b>{}</b> {} {}</p>\n'.format(pace.Distance, time_to_string(pace_time),
                                       time_to_string(pace_mile, '{minutes:02d}:{seconds:02d}'))
         self.race_paces.setText(text)
+
+    def update_training_paces(self):
+        self.training_paces.clear()
+        text = ''
+        training_paces = [x for x in self.vdot.training_paces
+                          if x.Distance not in [x.Distance for x in self.vdot.race_times]]
+        for pace in sorted(training_paces, key=lambda x: x.Mile):
+            pace_mile = datetime.timedelta(seconds=pace.Mile)
+            text += '<p><b>{}</b> {}</p>\n'.format(pace.Distance, time_to_string(pace_mile,
+                                                                                 '{minutes:02d}:{seconds:02d}'))
+        self.training_paces.setText(text)
 
     def get_race_name_combo_id(self, race_name):
         combo_id = self.combo_race_name.findText(race_name)
