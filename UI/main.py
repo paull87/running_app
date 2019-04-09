@@ -10,6 +10,7 @@ import MainMenu
 import Diary
 import ShoeList
 import Race
+import VdotWindow as VDOTW
 
 settings = Settings()
 
@@ -95,6 +96,13 @@ class RaceWindow(QMainWindow, Race.UiRace):
         self.race_id = None
 
 
+class VDOTWindow(QMainWindow, VDOTW.UiVDOT):
+    def __init__(self):
+        QMainWindow.__init__(self)
+        VDOTW.UiVDOT.__init__(self)
+        self.setup_ui(self)
+
+
 class Window(QMainWindow, MainMenu.Ui_RunningApp):
     def __init__(self):
         QMainWindow.__init__(self)
@@ -102,6 +110,7 @@ class Window(QMainWindow, MainMenu.Ui_RunningApp):
         self.calendar_window = CalendarWindow()
         self.diary_window = DiaryWindow()
         self.race_window = RaceWindow()
+        self.vdot_window = VDOTWindow()
         self.calendar_window.set_diary_window(self.diary_window)
         self.calendar_window.set_race_window(self.race_window)
         self.shoe_window = ShoeListWindow()
@@ -110,6 +119,7 @@ class Window(QMainWindow, MainMenu.Ui_RunningApp):
         self.buttonDiary.clicked.connect(self.open_diary)
         self.buttonShoe.clicked.connect(self.open_shoe_list)
         self.button_race.clicked.connect(self.open_race)
+        self.button_vdot.clicked.connect(self.open_vdot)
 
         self.calendar_window
 
@@ -123,6 +133,10 @@ class Window(QMainWindow, MainMenu.Ui_RunningApp):
     def open_race(self):
         self.race_window.reset_form()
         self.race_window.show()
+
+    def open_vdot(self):
+        self.vdot_window.reset_form()
+        self.vdot_window.show()
 
     def open_shoe_list(self):
         self.shoe_window.show()
