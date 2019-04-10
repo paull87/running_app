@@ -259,6 +259,12 @@ class DB:
         if len(result) > 0:
             return result[0]
 
+    def update_workout_date(self, workout_id, new_date):
+        """Updates the given workout date with the date given."""
+        cursor = self.connection.cursor()
+        cursor.execute(sql_queries.update_workout_date, (new_date, workout_id))
+        self.connection.commit()
+
 def named_tuple_result(name, results):
     """Creates a named tuple result set for the given results."""
     pre = 'x' if [x for x in results.description if x[0].isdigit()] else ''

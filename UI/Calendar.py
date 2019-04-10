@@ -146,12 +146,17 @@ class CustomList(QtWidgets.QListWidget):
         if isinstance(event.source(), CustomList):
             moved_item = event.source().takeItem(event.source().currentRow())
             self.addItem(moved_item)
+            self.move_workout(moved_item.item_id)
         else:
             event.ignore()
 
     def dropMimeData(self, index, mimedata, action):
         super(CustomList, self).dropMimeData(index, mimedata, action)
         return True
+
+    def move_workout(self, workout_id):
+        new_date = datetime.datetime.combine(self.list_date, datetime.datetime.min.time())
+        settings.database.update_workout_date(workout_id, new_date)
 
 
 class Ui_MainWindow(object):

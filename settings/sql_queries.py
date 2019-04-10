@@ -597,3 +597,8 @@ FROM Diary
 WHERE diaryDate >= ?
 AND diaryDate < ?;
 """
+
+update_workout_date = """
+UPDATE SchedulePlan
+SET ScheduleDate = ?
+WHERE SchedulePlanID = ?"""
