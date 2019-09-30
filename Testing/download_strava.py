@@ -25,7 +25,7 @@ def default_shoe(gear_id):
 
 
 with open('strava_activities.csv', 'w', newline='') as open_file:
-    for a in strava_connection.get_activities(after=datetime.datetime(2014, 1, 1)):
+    for a in strava_connection.get_activities(after=datetime.datetime(2019, 6, 7)):
         a.start_date_local = a.start_date_local.replace(second=0)
         ref = settings.database.connection.execute('SELECT DiaryID, DiaryDate FROM Diary WHERE DiaryDate = ?',
                                              (a.start_date_local,)).fetchone()
@@ -33,7 +33,7 @@ with open('strava_activities.csv', 'w', newline='') as open_file:
             cursor = settings.database.connection.cursor()
             cursor.execute('UPDATE Diary SET StravaID = ? WHERE DiaryID = ?;', (a.id, ref[0]))
             settings.database.connection.commit()
-        elif a.start_date_local > datetime.datetime(2016, 3, 27):
+        elif a.start_date_local > datetime.datetime(2019, 6, 7):
             settings.database.add_diary_entry((
                 None,
                 a.start_date_local,

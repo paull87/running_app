@@ -531,11 +531,11 @@ LEFT JOIN
 ORDER BY AllWeeks.Week"""
 
 year_stats = """WITH RECURSIVE dates(date) AS (
-  VALUES('2019-01-01')
+  VALUES('{current}-01-01')
   UNION ALL
   SELECT date(date, '+1 day')
   FROM dates
-  WHERE date(date, '+1 day') < '2020-01-01'
+  WHERE date(date, '+1 day') < '{next}-01-01'
 ),
 cte_CurrentYear AS (
     SELECT 
@@ -543,8 +543,8 @@ cte_CurrentYear AS (
         SUM(distanceMiles) AS TotalDistance,
         SUM(RunTime) AS TotalTime
     FROM Diary
-    WHERE DiaryDate >= '2019-01-01'
-    AND DiaryDate < '2020-01-01'
+    WHERE DiaryDate >= '{current}-01-01'
+    AND DiaryDate < '{next}-01-01'
     GROUP BY date(DiaryDate)
 ),
 cte_PreviousYear AS (
@@ -552,8 +552,8 @@ cte_PreviousYear AS (
     SUM(distanceMiles) AS TotalDistance, 
     SUM(RunTime) AS TotalTime
     FROM Diary
-    WHERE DiaryDate >= '2018-01-01'
-    AND DiaryDate < '2019-01-01'
+    WHERE DiaryDate >= '{previous}-01-01'
+    AND DiaryDate < '{current}-01-01'
     GROUP BY date(DiaryDate))
 
 SELECT 
@@ -597,6 +597,39 @@ FROM Diary
 WHERE diaryDate >= ?
 AND diaryDate < ?;
 """
+
+get_year_summaries = """
+SELECT
+    Stats.Year,
+    Stats.TotalRunTime,
+    Stats.TotalMiles,
+    Stats.TotalKM,
+    Stats.AverageHR,
+    Stats.AverageIntensityPointsHR,
+    HealthStats.AverageKG,
+    HealthStats.AverageLB,
+    HealthStats.AverageRestingHR
+FROM (
+    SELECT
+        STRFTIME('%Y', DiaryDate) AS Year,
+        SUM(RunTime) AS TotalRunTime,
+        SUM(DistanceMiles) AS TotalMiles,
+        SUM(DistanceKM) AS TotalKM,
+        AVG(AverageHR) AS AverageHR,
+        AVG(IntensityPointsHR) AS AverageIntensityPointsHR
+    FROM Diary
+    LEFT JOIN HealthStats
+    GROUP BY STRFTIME('%Y', DiaryDate)) AS Stats
+LEFT JOIN (
+    SELECT
+        STRFTIME('%Y', Date) AS Year,
+        AVG(WeightKG) AS AverageKG,
+        AVG(WeightLB) AS AverageLB,
+        AVG(RestingHR) AS AverageRestingHR
+    FROM HealthStats
+    GROUP BY STRFTIME('%Y', Date)) AS HealthStats
+    ON Stats.Year = HealthStats.Year
+ORDER BY Stats.Year DESC;"""
 
 update_workout_date = """
 UPDATE SchedulePlan

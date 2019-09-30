@@ -76,6 +76,12 @@ class Strava:
 
 def get_client():
     client = Client()
-    authorize_url = client.authorization_url(client_id=26273, redirect_uri='localhost')
-    client.access_token = '44c3f25ffc9eb06465da267eaa76b3d9d664dc21'
+    authorize_url = client.authorization_url(client_id=26273, redirect_uri='https://localhost:8080', scope=['read','read_all', 'activity:read_all'])
+    code = '299ad7943b6eb478247684620d87e341cfdcb6a2'
+    access_token = client.exchange_code_for_token(
+        client_id=26273,
+        client_secret='80f4236b6e958701dbeebb8c09c99e9d2fb71d1a',
+        code=code
+    )
+    client.access_token = access_token['access_token']
     return client

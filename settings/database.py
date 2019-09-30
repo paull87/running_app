@@ -259,6 +259,10 @@ class DB:
         if len(result) > 0:
             return result[0]
 
+    def get_year_summaries(self):
+        """Returns the year summaries for a given date range."""
+        return named_tuple_result('YearSummaries', self.connection.cursor().execute(sql_queries.get_year_summaries))
+
     def update_workout_date(self, workout_id, new_date):
         """Updates the given workout date with the date given."""
         cursor = self.connection.cursor()
